@@ -1,3 +1,5 @@
-# Sham-book
+# Sham book
+# This app is used to read the popular extension files like *.epub, *.pdf
 # Developed by Vu Minh Dai - Tu Ngoc Anh Tuan
-# Link books: https://drive.google.com/folderview?id=0B05RNFu6uZH9UHlaNjEySm92c2s&usp=sharing
+# Please contact us for using this app for business
+# Email: vuminhdai998@gmail.com or vuminhdai998@live.com
