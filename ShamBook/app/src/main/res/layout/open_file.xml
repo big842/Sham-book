@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+    <Button
+        android:id="@+id/chooseFile"
+        android:text="@string/choose_file"
+        android:layout_width="170dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="false"
+        android:layout_alignParentLeft="false"
+        style="@style/Widget.AppCompat.ImageButton"
+        android:textSize="20dp"
+        android:layout_marginBottom="10dp"
+        android:layout_alignParentEnd="true"
+        android:background="@drawable/rounded_button"
+        android:textColor="#ffffff" />
+    <Button
+        android:id="@+id/chooseFolder"
+        android:text="@string/choose_folder"
+        android:layout_width="170dp"
+        android:layout_height="60dp"
+        android:layout_below="@+id/chooseFile"
+        android:layout_alignStart="@+id/chooseFile"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="false"
+        style="@style/Widget.AppCompat.ImageButton"
+        android:textSize="20dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/rounded_button"
+        android:textColor="#ffffff" />
+</RelativeLayout>

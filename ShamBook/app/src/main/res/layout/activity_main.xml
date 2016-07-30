@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawerAppFeatures"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#ffffff">
+    <FrameLayout
+        android:id="@+id/frameListFeatures"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/openBooks"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+        </LinearLayout>
+
+        <ListView
+            android:id="@+id/listBooks"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+        </ListView>
+
+        <GridView
+            android:id="@+id/gridBooks"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:columnWidth="100dp"
+            android:numColumns="auto_fit"
+            android:verticalSpacing="20dp"
+            android:horizontalSpacing="20dp"
+            android:stretchMode="columnWidth"
+            android:gravity="center"/>
+
+        <LinearLayout
+            android:id="@+id/handleFileBtn"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:layout_gravity="bottom">
+            <Button
+                android:id="@+id/btnBackDirectory"
+                android:text="Back"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Base.Widget.AppCompat.ButtonBar"
+                android:background="#69ebda"
+                android:textSize="20sp"
+                android:textColor="#ffffff"
+                android:allowUndo="false"
+                android:layout_gravity="bottom"
+                android:layout_weight="1" />
+            <Button
+                android:id="@+id/btnChooseThisFolder"
+                android:text="Select"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Base.Widget.AppCompat.ButtonBar"
+                android:background="#69ebda"
+                android:textSize="20sp"
+                android:textColor="#ffffff"
+                android:allowUndo="false"
+                android:layout_gravity="bottom"
+                android:layout_weight="1" />
+            <Button
+                android:id="@+id/btnExitChooseFile"
+                android:text="Exit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Base.Widget.AppCompat.ButtonBar"
+                android:background="#69ebda"
+                android:textSize="20sp"
+                android:textColor="#ffffff"
+                android:allowUndo="false"
+                android:layout_gravity="bottom"
+                android:layout_weight="1" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="320dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_gravity="left"
+        android:background="#ffffff">
+
+        <ImageView
+            android:id="@+id/appImage"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/app_image_small"/>
+
+        <ListView
+            android:id="@+id/listAppFeatures"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:choiceMode="singleChoice"
+            android:divider="#D2D2D2"
+            android:dividerHeight="2dp">
+        </ListView>
+    </LinearLayout>
+</android.support.v4.widget.DrawerLayout>

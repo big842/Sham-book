@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Sham Book</string>
+
+    <string name="choose_file">Choose file</string>
+    <string name="choose_folder">Choose folder</string>
+    <string name="title_activity_book_content">Book Content</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="cancel">Cancel</string>
+    <string name="Ok">OK</string>
+    <string name="search">Search</string>
+    <string name="color_dialog">Color</string>
+    <string name="search_books">Search books</string>
+    <string name="search_hint">Input book name or author</string>
+    <string name="choose_text_size">Text size</string>
+    <string name="btn_decrease">\u003c</string>
+    <string name="btn_increase">\u003e</string>
+</resources>

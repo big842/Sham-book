@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp">
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_text_size"
+            android:layout_marginTop="6dp" />
+
+        <TextView
+            android:text="@string/choose_text_size"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:textSize="20dp"
+            android:layout_marginTop="15dp"
+            android:textColor="#a1d682" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/splitLine1"
+        android:layout_width="match_parent"
+        android:layout_height= "2dp"
+        android:background="#9d9d9d" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp">
+
+        <Button
+            android:id="@+id/btnDecrease"
+            android:text="@string/btn_decrease"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="30dp"
+            style="@style/Base.Widget.AppCompat.ActionButton"
+            android:layout_marginRight="10dp" />
+        <TextView
+            android:id="@+id/textSize"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:textSize="30dp"
+            android:textAlignment="center" />
+        <Button
+            android:id="@+id/btnIncrease"
+            android:text="@string/btn_increase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="30dp"
+            style="@style/Base.Widget.AppCompat.ActionButton"
+            android:layout_marginLeft="10dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="right"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp">
+        <Button
+            android:id="@+id/okDialog"
+            android:text="@string/Ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Base.Widget.AppCompat.ActionButton"
+            android:layout_marginRight="15dp"
+            android:textColor="#5f5e5e" />
+
+        <Button
+            android:id="@+id/cancelDialog"
+            android:text="@string/cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Base.Widget.AppCompat.ActionButton"
+            android:layout_marginRight="5dp"
+            android:textColor="#5f5e5e" />
+    </LinearLayout>
+</LinearLayout>

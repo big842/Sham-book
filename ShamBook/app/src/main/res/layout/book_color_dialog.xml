@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#fefbe7">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <ImageView
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:src="@drawable/lc_background_color"
+            android:layout_marginTop="6dp" />
+
+        <TextView
+            android:text="@string/color_dialog"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:textSize="20dp"
+            android:layout_marginTop="15dp"
+            android:textColor="#a1d682" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/splitLine"
+        android:layout_width="match_parent"
+        android:layout_height= "2dp"
+        android:background="#9d9d9d" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp">
+        <ImageButton
+            android:id="@+id/color1"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#c9bcbc" />
+        <ImageButton
+            android:id="@+id/color2"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#b4a298" />
+        <ImageButton
+            android:id="@+id/color3"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#e3e3e3" />
+        <ImageButton
+            android:id="@+id/color4"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#000000" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp">
+        <ImageButton
+            android:id="@+id/color5"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#ffffff" />
+        <ImageButton
+            android:id="@+id/color6"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#9ecfc2" />
+        <ImageButton
+            android:id="@+id/color7"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#718884" />
+        <ImageButton
+            android:id="@+id/color8"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#8d8d8f" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginLeft="5dp">
+        <ImageButton
+            android:id="@+id/color9"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#bdbc90" />
+        <ImageButton
+            android:id="@+id/color10"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#8c8dad" />
+        <ImageButton
+            android:id="@+id/color11"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#3c3c3c" />
+        <ImageButton
+            android:id="@+id/color12"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:backgroundTint="#b1bdac" />
+    </LinearLayout>
+
+
+    <Button
+        android:id="@+id/cancelDialog"
+        android:text="@string/cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        style="@style/Base.Widget.AppCompat.ActionButton"
+        android:layout_marginRight="5dp" />
+</LinearLayout>
