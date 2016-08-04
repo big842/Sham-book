@@ -147,6 +147,14 @@ public class MainActivity extends AppCompatActivity {
         gridBookLayout = (GridView) findViewById(R.id.gridBooks);
         frameListFeatures = (FrameLayout) findViewById(R.id.frameListFeatures);
         frameListFeatures.setBackgroundColor(listViewColor);
+        handleChooseFileLayout.setVisibility(View.GONE);
+
+//        try{
+//            File secondFile = new File(getFilesDir(), "list_recent_book");
+//            secondFile.delete();
+//        }catch(Exception ex){
+//
+//        }
 
         //Ininit and load leftview
         initAppSettingList();
@@ -754,7 +762,6 @@ public class MainActivity extends AppCompatActivity {
         //Disable viewListBooks
         listBookLayout.setVisibility(View.GONE);
         gridBookLayout.setVisibility(View.GONE);
-        handleChooseFileLayout.setVisibility(View.GONE);
 
         //Show option about choose file or directory
         openBooksLayout.setVisibility(View.VISIBLE);
@@ -970,7 +977,7 @@ public class MainActivity extends AppCompatActivity {
 
                     //Write book path to file
                     tempBook1.add(bo);
-                    writeBookRecentRead(tempBook1);
+                    writeBookRecentRead(tempBook1, 1);
                     tempBook2.add(bo.filePath);
                     writeBookPathsToFile(tempBook2);
 
@@ -1193,7 +1200,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             //Write book paths to list_book_path again. This paths read successfully
-            writeBookRecentRead(booksOpened);
+            writeBookRecentRead(booksOpened, 1);
         }
     }
 
@@ -1310,10 +1317,10 @@ public class MainActivity extends AppCompatActivity {
                 if(type == 1 && !wasExistInRecentRead(bo.filePath)) {
                     ArrayList<BookInformation> tempBook = new ArrayList<>();
                     tempBook.add(bo);
-                    writeBookRecentRead(tempBook);
+                    writeBookRecentRead(tempBook, 1);
                 }else if(bo.precentRead != 0){
                     books.set(position, bo);
-                    writeBookRecentRead(books);
+                    writeBookRecentRead(books, 2);
                 }
 
                 String []splitPath =  bo.filePath.split("\\.");
@@ -1356,10 +1363,10 @@ public class MainActivity extends AppCompatActivity {
                 if(type == 1 && !wasExistInRecentRead(bo.filePath)) {
                     ArrayList<BookInformation> tempBook = new ArrayList<>();
                     tempBook.add(bo);
-                    writeBookRecentRead(tempBook);
+                    writeBookRecentRead(tempBook, 1);
                 }else if(bo.precentRead != 0){
                     books.set(position, bo);
-                    writeBookRecentRead(books);
+                    writeBookRecentRead(books, 2);
                 }
 
                 String []splitPath =  bo.filePath.split("\\.");
@@ -1389,7 +1396,12 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void writeBookRecentRead(ArrayList<BookInformation> booksOpen){
+    private void writeBookRecentRead(ArrayList<BookInformation> booksOpen, int type){
+        //type: 1 - write more book in booksOpen, 2 - write all bookOpen
+        if(type == 2){
+            listRecentBookPath = null;
+        }
+
         if(listRecentBookPath == null)
             listRecentBookPath = new ArrayList<>();
         else if (listRecentBookPath.size() > 9){
