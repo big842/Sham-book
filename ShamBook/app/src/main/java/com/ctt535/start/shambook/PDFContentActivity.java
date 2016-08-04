@@ -155,18 +155,8 @@ public class PDFContentActivity extends AppCompatActivity {
             mPdfRenderer = new PdfRenderer(mFileDescriptor);
             numPages = mPdfRenderer.getPageCount();
             listPages = new Bitmap[numPages];
-
-            for(int i=0; i< numPages; i++){
-                listPages[i] = null;
-            }
-
             settingListPdfPages();
-            if(percentRead != 0) {
-                currentPage = (int)  Math.round((percentRead * numPages *1.0)/100);
-                moveToPage(currentPage, 1);
-            }else{
-                showFirstBookContent();
-            }
+            showFirstBookContent();
 
             loadPDFBookmark(pdfReader);
         }catch (Exception ex){
@@ -344,6 +334,10 @@ public class PDFContentActivity extends AppCompatActivity {
     }
 
     private void showFirstBookContent(){
+        if(percentRead != 0){
+            listPdfPages.setVisibility(View.INVISIBLE);
+        }
+
         int pageWidth = screenWidth;
         Bitmap bitmap;
         if (numPages <= 20){
@@ -399,6 +393,11 @@ public class PDFContentActivity extends AppCompatActivity {
         ListPDFViewAdapter.ZoomFactor = scalePage;
         lPDFViewAdapter = new ListPDFViewAdapter(this, listPages);
         listPdfPages.setAdapter(lPDFViewAdapter);
+
+        if(percentRead != 0){
+            currentPage = (int)  Math.round((percentRead * numPages *1.0)/100);
+            moveToPage(currentPage);
+        }
     }
 
     private void loadNewPDFPage(final int numLoad,  final int type){
@@ -581,10 +580,10 @@ public class PDFContentActivity extends AppCompatActivity {
             lastChapter.setBackgroundColor(Color.WHITE);
         lastChapter = view;
         view.setBackgroundColor(0xFFD0F79A);
-        moveToPage(listBookmarkPosition.get(pos), 2);
+        moveToPage(listBookmarkPosition.get(pos));
     }
 
-    private void moveToPage(int page, int type){
+    private void moveToPage(int page){
         //type: 1 - first load call, 2-other function call
 
         int newNextPage, newPrePage, pageWidth = screenWidth;
@@ -627,11 +626,8 @@ public class PDFContentActivity extends AppCompatActivity {
             t ++;
             mCurrentPage.close();
         }
-        if(type == 1){
-            setListPdfPagesAdapter(pageWidth);
-        }else {
-            lPDFViewAdapter.notifyDataSetChanged();
-        }
+
+        lPDFViewAdapter.notifyDataSetChanged();
         listPdfPages.smoothScrollToPosition(page);
         listPdfPages.setVisibility(View.VISIBLE);
         prePageIndex = newPrePage;
@@ -714,7 +710,7 @@ public class PDFContentActivity extends AppCompatActivity {
             public void onClick(View v) {
                 dialog.dismiss();
                 getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
-                moveToPage(seekPagePos, 2);
+                moveToPage(seekPagePos);
                 currentPage = seekPagePos;
             }
         });
@@ -872,6 +868,6 @@ public class PDFContentActivity extends AppCompatActivity {
         getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
 
         defaultBackgroundColor = color;
-        moveToPage(currentPage, 2);
+        moveToPage(currentPage);
     }
 }
