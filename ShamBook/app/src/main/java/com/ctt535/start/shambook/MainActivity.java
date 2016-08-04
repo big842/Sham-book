@@ -13,6 +13,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -95,6 +97,15 @@ public class MainActivity extends AppCompatActivity {
     // 3: at read book, 4: at root directory of choose file
     private int atWhere = 0;
 
+    //Load all book thread
+    Handler hLoadALlBooks;
+    private ArrayList<String> allBooksOpened;
+
+    //Search book thread
+    Handler hSearch;
+    private ArrayList<BookInformation> foundBooks;
+    private String searchText;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,6 +146,7 @@ public class MainActivity extends AppCompatActivity {
         listBookLayout = (ListView) findViewById(R.id.listBooks);
         gridBookLayout = (GridView) findViewById(R.id.gridBooks);
         frameListFeatures = (FrameLayout) findViewById(R.id.frameListFeatures);
+        frameListFeatures.setBackgroundColor(listViewColor);
 
         //Ininit and load leftview
         initAppSettingList();
@@ -578,6 +590,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showDialogSearchText(){
+        hSearch = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+
+                if(foundBooks.size() == 0){
+                    showDialogErrorReadFile("Can't find any books match with '" + searchText + "'");
+                }else{
+                    if(showGridView)
+                        viewBookInformationInScreenAsGrid(foundBooks, 1);
+                    else
+                        viewBookInformationInScreenAsList(foundBooks, 1);
+                    showDialogSuccessReadFile("Found " + foundBooks.size() + " books with name " + searchText);
+                }
+                progress.dismiss();
+            }
+        };
+
         // Custom dialog
         final Dialog dialog = new Dialog(context);
         dialog.setContentView(R.layout.search_dialog_layout);
@@ -600,41 +630,28 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 EditText inputText = (EditText)dialog.findViewById(R.id.inputText);
-                final String searchText = inputText.getText().toString();
+                searchText = inputText.getText().toString();
                 dialog.dismiss();
                 progress = ProgressDialog.show(context, "Please wait...", "Searching books for text '" + searchText + "' ..." , true);
-                progress.setCancelable(true);
 
-                new Thread(new Runnable() {
+                Thread t = new Thread() {
                     @Override
                     public void run(){
-                        // do the thing that takes a long time
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run(){
-                                ArrayList<BookInformation> foundBooks = new ArrayList<>();
+                        foundBooks = new ArrayList<>();
 
-                                for (int i=0; i<allBooks.size(); i++){
-                                    BookInformation  bookItem = allBooks.get(i);
-                                    if(bookItem.filePath.contains(searchText) || bookItem.authors.contains(searchText)){
-                                        foundBooks.add(bookItem);
-                                    }
-                                }
-
-                                if(foundBooks.size() == 0){
-                                    showDialogErrorReadFile("Can't find any books match with '" + searchText + "'");
-                                }else{
-                                    if(showGridView)
-                                        viewBookInformationInScreenAsGrid(foundBooks, 1);
-                                    else
-                                        viewBookInformationInScreenAsList(foundBooks, 1);
-                                    showDialogSuccessReadFile("Found " + foundBooks.size() + " books with name " + searchText);
-                                }
-                                progress.dismiss();
+                        for (int i=0; i<allBooks.size(); i++){
+                            BookInformation  bookItem = allBooks.get(i);
+                            if(bookItem.filePath.contains(searchText) || bookItem.authors.contains(searchText)){
+                                foundBooks.add(bookItem);
                             }
-                        });
+                        }
+
+                        Message msg = hSearch.obtainMessage();
+                        hSearch.sendMessage(msg);
                     }
-                }).start();
+                };
+
+                t.start();
             }
         });
 
@@ -736,6 +753,8 @@ public class MainActivity extends AppCompatActivity {
     private void showOpenFileLayout(boolean isReturn){
         //Disable viewListBooks
         listBookLayout.setVisibility(View.GONE);
+        gridBookLayout.setVisibility(View.GONE);
+        handleChooseFileLayout.setVisibility(View.GONE);
 
         //Show option about choose file or directory
         openBooksLayout.setVisibility(View.VISIBLE);
@@ -748,7 +767,6 @@ public class MainActivity extends AppCompatActivity {
             LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             viewOptionOpenFile = inflater.inflate(R.layout.open_file, openBooksLayout, true);
         }
-
 
         Button btnChooseFile = (Button)viewOptionOpenFile.findViewById(R.id.chooseFile);
         btnChooseFile.setOnClickListener(new View.OnClickListener() {
@@ -936,7 +954,7 @@ public class MainActivity extends AppCompatActivity {
                     isRead = true;
                 }
             }else if (splitPath[splitPath.length - 1].toLowerCase().equals("pdf")){
-                if (getPDFBookInformation(bo.filePath, 1) != null) {
+                if (getPDFBookInformation(bo.filePath, 1, 0) != null) {
                     isRead = true;
                 }
             }
@@ -1108,7 +1126,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private BookInformation getPDFBookInformation(String value, int type){
+    private BookInformation getPDFBookInformation(String value, int type, int percentRead){
         //type: 1 readAllBooks call, 2 readRecentBooks call
         File file = new File(value);
         try {
@@ -1125,7 +1143,7 @@ public class MainActivity extends AppCompatActivity {
             bookInfo.authors = reader.getInfo().get("Author");
             bookInfo.authors = reader.getInfo().get("Author");
             bookInfo.format = "pdf";
-            bookInfo.precentRead = 0;
+            bookInfo.precentRead = percentRead;
 
             ParcelFileDescriptor mFileDescriptor = ParcelFileDescriptor.open(file,ParcelFileDescriptor.MODE_READ_ONLY);
             PdfRenderer mPdfRenderer = new PdfRenderer(mFileDescriptor);
@@ -1136,7 +1154,6 @@ public class MainActivity extends AppCompatActivity {
             mCurrentPage.close();
             mPdfRenderer.close();
             mFileDescriptor.close();
-
 
             if(type == 1)
                 allBooks.add(bookInfo);
@@ -1190,7 +1207,7 @@ public class MainActivity extends AppCompatActivity {
                 if (getEpubBookInformation(paths.get(i).filePath, 2) != null)
                     booksOpened.add(paths.get(i));
             }else if (extension[extension.length - 1].toLowerCase().equals("pdf")){
-                if (getPDFBookInformation(paths.get(i).filePath, 2) != null)
+                if (getPDFBookInformation(paths.get(i).filePath, 2, paths.get(i).precentRead) != null)
                     booksOpened.add(paths.get(i));
             }
         }
@@ -1235,35 +1252,39 @@ public class MainActivity extends AppCompatActivity {
     private void loadAllBooks(final ArrayList<String> paths, final int status, final String fiName){
         //Status = 1: Load all book in fiName folder(link in paths list), status = 0: Load all books in paths
 
-        progress = ProgressDialog.show(context, "Please wait...", "Loading all books..." , true);
-        progress.setCancelable(true);
+        hLoadALlBooks = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
 
-        new Thread(new Runnable() {
+                hanldeAfterReadAllBooks(allBooksOpened, status, fiName);
+                progress.dismiss();
+            }
+        };
+
+        progress = ProgressDialog.show(context, "Please wait...", "Loading all books..." , true);
+
+        Thread t = new Thread() {
             @Override
             public void run(){
-                // do the thing that takes a long time
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run(){
-                        ArrayList<String> booksOpened = new ArrayList<>();
+                allBooksOpened = new ArrayList<>();
 
-                        for (int i=0; i<paths.size(); i++){
-                            String [] extension = paths.get(i).split("\\.");
-                            if(extension[extension.length - 1].toLowerCase().equals("epub")) {
-                                if (getEpubBookInformation(paths.get(i), 1) != null)
-                                    booksOpened.add(paths.get(i));
-                            }else if (extension[extension.length - 1].toLowerCase().equals("pdf")){
-                                if (getPDFBookInformation(paths.get(i), 1) != null)
-                                    booksOpened.add(paths.get(i));
-                            }
-                        }
+                for (int i=0; i<paths.size(); i++){
+                    String [] extension = paths.get(i).split("\\.");
+                    if(extension[extension.length - 1].toLowerCase().equals("epub")) {
+                        if (getEpubBookInformation(paths.get(i), 1) != null)
+                            allBooksOpened.add(paths.get(i));
+                    }else if (extension[extension.length - 1].toLowerCase().equals("pdf")){
+                        if (getPDFBookInformation(paths.get(i), 1, 0) != null)
+                            allBooksOpened.add(paths.get(i));
+                    }
+                }
 
-                        hanldeAfterReadAllBooks(booksOpened, status, fiName);
-                        progress.dismiss();
-                     }
-                });
+                Message msg = hLoadALlBooks.obtainMessage();
+                hLoadALlBooks.sendMessage(msg);
             }
-        }).start();
+        };
+        t.start();
     }
 
     private void viewBookInformationInScreenAsList(final ArrayList<BookInformation> books, final int type){
@@ -1283,17 +1304,19 @@ public class MainActivity extends AppCompatActivity {
                 editor.putString("currentBookPath", books.get(position).filePath);
                 editor.commit();
 
-                if(type == 1) {
+                BookInformation bo = new BookInformation();
+                bo.filePath = books.get(position).filePath;
+                bo.precentRead = books.get(position).precentRead;
+                if(type == 1 && !wasExistInRecentRead(bo.filePath)) {
                     ArrayList<BookInformation> tempBook = new ArrayList<>();
-                    BookInformation bo = new BookInformation();
-                    bo.filePath = books.get(position).filePath;
-                    bo.precentRead = 0;
                     tempBook.add(bo);
-                    if(!wasExistInRecentRead(bo.filePath))
-                        writeBookRecentRead(tempBook);
+                    writeBookRecentRead(tempBook);
+                }else if(bo.precentRead != 0){
+                    books.set(position, bo);
+                    writeBookRecentRead(books);
                 }
 
-                String []splitPath =  books.get(position).filePath.split("\\.");
+                String []splitPath =  bo.filePath.split("\\.");
                 Intent intent;
                 if(splitPath[splitPath.length-1].equals("epub"))
                     intent = new Intent(MainActivity.this, EpubContentActivity.class);
@@ -1327,17 +1350,19 @@ public class MainActivity extends AppCompatActivity {
                 editor.putString("currentBookPath", books.get(position).filePath);
                 editor.commit();
 
-                if(type == 1) {
+                BookInformation bo = new BookInformation();
+                bo.filePath = books.get(position).filePath;
+                bo.precentRead = books.get(position).precentRead;
+                if(type == 1 && !wasExistInRecentRead(bo.filePath)) {
                     ArrayList<BookInformation> tempBook = new ArrayList<>();
-                    BookInformation bo = new BookInformation();
-                    bo.filePath = books.get(position).filePath;
-                    bo.precentRead = 0;
                     tempBook.add(bo);
-                    if(!wasExistInRecentRead(bo.filePath))
-                        writeBookRecentRead(tempBook);
+                    writeBookRecentRead(tempBook);
+                }else if(bo.precentRead != 0){
+                    books.set(position, bo);
+                    writeBookRecentRead(books);
                 }
 
-                String []splitPath =  books.get(position).filePath.split("\\.");
+                String []splitPath =  bo.filePath.split("\\.");
                 Intent intent;
                 if(splitPath[splitPath.length-1].equals("epub"))
                     intent = new Intent(MainActivity.this, EpubContentActivity.class);

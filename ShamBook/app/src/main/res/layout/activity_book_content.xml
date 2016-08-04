@@ -17,11 +17,18 @@
             android:id="@+id/webviewContent"
             android:layout_margin="5dp"/>
 
-        <ListView
-            android:id="@+id/list_pdf_pages"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-        </ListView>
+        <com.ctt535.start.shambook.CustomHorizontalScrollView
+            android:id="@+id/horizontalScroll"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent">
+
+            <com.ctt535.start.shambook.ZoomListView
+                android:id="@+id/listPdfPages"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            </com.ctt535.start.shambook.ZoomListView>
+
+        </com.ctt535.start.shambook.CustomHorizontalScrollView>
     </FrameLayout>
 
     <LinearLayout

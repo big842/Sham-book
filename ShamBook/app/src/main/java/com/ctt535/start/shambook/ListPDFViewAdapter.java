@@ -1,35 +1,52 @@
 package com.ctt535.start.shambook;
 
-import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-
-import java.util.List;
+import android.widget.LinearLayout;
 
 /**
- * Created by vumin_000 on 18/07/2016.
+ * Created by minhdai on 01/08/2016.
  */
 public class ListPDFViewAdapter extends ArrayAdapter<Bitmap> {
-    private final Activity context;
-    private final Bitmap[] listPage;
+    private Context context;
+    private Bitmap[] allpages;
+    private int pWidth;
+    private int pHeight;
+    public static float ZoomFactor = 1.0f;
 
-    public ListPDFViewAdapter(Activity context, Bitmap[] listPage) {
-        super(context, R.layout.pdf_image_layout, listPage);
-        this.context=context;
-        this.listPage=listPage;
+    public ListPDFViewAdapter(Context context, Bitmap[] allpages) {
+        super(context, R.layout.pdf_image_layout, allpages);
+
+        this.context = context;
+        this.allpages = allpages;
     }
 
-    public View getView(int position, View view, ViewGroup parent) {
-        LayoutInflater inflater=context.getLayoutInflater();
-        View rowView = inflater.inflate(R.layout.pdf_image_layout, null,true);
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View rowView = inflater.inflate(R.layout.pdf_image_layout, parent, false);
 
-        ImageView imageView = (ImageView) rowView.findViewById(R.id.fileImage);
-        imageView.setImageBitmap(listPage[position]);
+        ImageView pageImage = (ImageView)rowView.findViewById(R.id.fileImage);
+        Bitmap bPage = allpages[position];
+        if(bPage != null) {
+            pWidth = bPage.getWidth();
+            pHeight = bPage.getHeight();
 
+            pageImage.setLayoutParams(new LinearLayout.LayoutParams(Math.round((float) bPage.getWidth() * ZoomFactor),
+                    Math.round((float) bPage.getHeight() * ZoomFactor)));
+        }else{
+            pageImage.setLayoutParams(new LinearLayout.LayoutParams(Math.round((float) pWidth * ZoomFactor),
+                    Math.round((float) pHeight * ZoomFactor)));
+        }
+
+        pageImage.setImageBitmap(bPage);
         return rowView;
     }
+
 }
+

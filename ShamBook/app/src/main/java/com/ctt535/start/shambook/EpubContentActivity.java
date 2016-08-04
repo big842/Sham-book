@@ -8,10 +8,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,6 +57,7 @@ public class EpubContentActivity extends AppCompatActivity {
 
     private ProgressDialog progress;
 
+    private Book currentBook;
     private View lastChapter;
     private WebView webviewContent;
     private WebSettings webSettingsContent;
@@ -63,8 +67,8 @@ public class EpubContentActivity extends AppCompatActivity {
     private DrawerLayout tableOfChapters;
     private ArrayAdapter chapterAdapter;
     private ArrayAdapter settingAdapter;
-    private ListView listPdfPages;
     private ListView leftDrawer;
+    private CustomHorizontalScrollView horizontalScroll;
 
     private BookInformation currentBookInfo;
     private ArrayList<String> listBookChapter;
@@ -80,9 +84,20 @@ public class EpubContentActivity extends AppCompatActivity {
 
     private int newUiOptions;
     private int defautTextSize;
+    private int defaultBackgroundColor;
     private String defaultTextColor;
     private String bookSourcePath;
     private StringBuilder bookHtml;
+
+    Handler hReadBook = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            readTableContent(currentBook.getTableOfContents().getTocReferences());
+            readBookContent(currentBook);
+            showTableContent();
+            progress.dismiss();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,14 +124,14 @@ public class EpubContentActivity extends AppCompatActivity {
         context =this;
 
         //Hide imageView because we are reading EPUB
-        listPdfPages = (ListView) findViewById(R.id.list_pdf_pages);
-        listPdfPages.setVisibility(View.GONE);
+        horizontalScroll = (CustomHorizontalScrollView) findViewById(R.id.horizontalScroll);
+        horizontalScroll.setVisibility(View.GONE);
 
         //Find id of layout
         leftDrawer = (ListView) findViewById(R.id.listChapter);
         tableOfChapters = (DrawerLayout) findViewById(R.id.tableOfChapters);
-        webviewContent = (WebView) findViewById(R.id.webviewContent);
         frameChapter = (FrameLayout) findViewById(R.id.frameChapter);
+        webviewContent = (WebView) findViewById(R.id.webviewContent);
 
         webSettingsContent = webviewContent.getSettings();
         webviewContent.getSettings().setJavaScriptEnabled(true);
@@ -136,7 +151,7 @@ public class EpubContentActivity extends AppCompatActivity {
         //Get book path, background color, textsize stored in the previous activity
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         final String currentBookPath = settings.getString("currentBookPath", "");
-        int defaultBackgroundColor = settings.getInt("epubBackgroundColor", -1);
+        defaultBackgroundColor = settings.getInt("epubBackgroundColor", -1);
         defaultTextColor = settings.getString("epubTextColor", "");
         defautTextSize = settings.getInt("epubTextSize", -1);
 
@@ -158,55 +173,73 @@ public class EpubContentActivity extends AppCompatActivity {
         //Read information of book
         if(currentBookPath != null){
             progress = ProgressDialog.show(context, "Please wait...", "Loading book content..." , true);
-            progress.setCancelable(true);
-
-            new Thread(new Runnable() {
+            Thread t = new Thread(){
                 @Override
                 public void run(){
-                    // do the thing that takes a long time
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run(){
-                            try {
-                                //Create book resources folder and load input stream
-                                createBookResourceFolder(currentBookPath);
-                                InputStream epubInputStream = new FileInputStream(currentBookPath);
+                    try {
+                        //Create book resources folder and load input stream
+                        createBookResourceFolder(currentBookPath);
+                        InputStream epubInputStream = new FileInputStream(currentBookPath);
 
-                                // Load Book from inputStream and load resource
-                                Book currentBook = (new EpubReader()).readEpub(epubInputStream);
-                                currentBookInfo = readBookInformation(currentBook, currentBookPath);
-                                loadResource(bookSourcePath, currentBook);
+                        // Load Book from inputStream and load resource
+                        currentBook = (new EpubReader()).readEpub(epubInputStream);
+                        currentBookInfo = readBookInformation(currentBook, currentBookPath);
+                        loadResource(bookSourcePath, currentBook);
 
-                                listBookChapter = new ArrayList<>();
-                                listChapterFile = new ArrayList<>();
-                                listBookContent = new ArrayList<>();
+                        listBookChapter = new ArrayList<>();
+                        listChapterFile = new ArrayList<>();
+                        listBookContent = new ArrayList<>();
 
-                                readTableContent(currentBook.getTableOfContents().getTocReferences());
-                                readBookContent(currentBook);
-
-                                epubInputStream.close();
-
-                                //Show table content in leftview first
-                                showTableContent();
-                            }catch (Exception e){}
-                            progress.dismiss();
-                        }
-                    });
+                        Message msg = hReadBook.obtainMessage();
+                        hReadBook.sendMessage(msg);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                        progress.dismiss();
+                    }
                 }
-            }).start();
+            };
+            t.start();
         }
     }
 
+    Handler hBackPress = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            Intent intent = new Intent(EpubContentActivity.this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            progress.dismiss();
+            startActivity(intent);
+            finish();
+        }
+    };
+
     @Override
     public void onBackPressed(){
-        //Delete book resource folder that already created
-        File file = new File(bookSourcePath);
-        deleteDirectory(file);
+        progress = ProgressDialog.show(context, "Please wait...", "Saving book..." , true);
+        Thread t = new Thread(){
+            @Override
+            public void run(){
+                try {
+                    //Delete book resource folder that already created
+                    File file = new File(bookSourcePath);
+                    deleteDirectory(file);
 
-        Intent intent = new Intent(EpubContentActivity.this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        finish();
+                    Message msg = hBackPress.obtainMessage();
+                    hBackPress.sendMessage(msg);
+                }catch (Exception e){
+                    e.printStackTrace();
+                    progress.dismiss();
+                }
+            }
+        };
+        t.start();
+    }
+
+    @Override
+    public void onActionModeFinished(ActionMode mode) {
+        super.onActionModeFinished(mode);
+
+        getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
     }
 
     private void initSettingList(){
@@ -244,7 +277,7 @@ public class EpubContentActivity extends AppCompatActivity {
         int chapPos = 0;
 
         bookHtml = new StringBuilder();
-        bookHtml.append("<!DOCTYPE html><html><header><style>img{width: 100%; height: 100%;} " +
+        bookHtml.append("<!DOCTYPE html><html><header><style>img{width: 100%; height: 100%;} body{width: 100%;}" +
                 "</style></header></html>\n");
 
         for (int i = 0; i < count; i++) {
@@ -278,8 +311,8 @@ public class EpubContentActivity extends AppCompatActivity {
         bookHtml = new StringBuilder();
         for (String content: listBookContent)
             bookHtml.append(content);
-        webviewContent.loadDataWithBaseURL("file://"+ bookSourcePath, bookHtml.toString(), "text/html", "utf-8", null);
 
+        webviewContent.loadDataWithBaseURL("file://"+ bookSourcePath, bookHtml.toString(), "text/html", "utf-8", null);
         if(defaultTextColor != ""){
             webviewContent.loadUrl("javascript:document.body.style.setProperty" +
                     "(\"color\", \"" + defaultTextColor + "\");");
