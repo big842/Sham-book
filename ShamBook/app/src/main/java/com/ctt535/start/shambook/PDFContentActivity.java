@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -41,7 +42,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -92,6 +92,8 @@ public class PDFContentActivity extends AppCompatActivity {
     private int currentPage = 0;
     private int seekPagePos = 0;
     private int percentRead = 0;
+    private int pagePdfWidth;
+    private int pagePdfHeight;
     private float scalePage = 1.0f;
     private String currentBookPath;
     private String defaultBackgroundColor;
@@ -140,6 +142,7 @@ public class PDFContentActivity extends AppCompatActivity {
         currentBookPath = settings.getString("currentBookPath", "");
         defaultBackgroundColor = settings.getString("pdfBackgroundColor", "#ffffff");
         loadPercentRead(0);
+        listPdfPages.setBackgroundColor(Color.parseColor(defaultBackgroundColor));
 
         //Find ids of leftview layout
         tableOfChapters = (DrawerLayout) findViewById(R.id.tableOfChapters);
@@ -168,6 +171,30 @@ public class PDFContentActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // Checks the orientation of the screen
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        screenWidth = size.x;
+        screenHeight = size.y;
+
+        if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+            screenWidth = getActualScreenWidthLanscape(screenWidth);
+        }
+
+        if(screenWidth > pagePdfWidth)
+            scalePage = (float) (screenWidth * 1.0 / pagePdfWidth);
+        else
+            scalePage= (float) (pagePdfWidth * 1.0 / screenWidth);
+
+        ListPDFViewAdapter.ZoomFactor = scalePage;
+        lPDFViewAdapter.notifyDataSetChanged();
+    }
+
+    @Override
     public void onBackPressed(){
         try {
             mFileDescriptor.close();
@@ -183,6 +210,38 @@ public class PDFContentActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();
+    }
+
+    private int getActualScreenWidthLanscape(int curWidth){
+        if(curWidth < 890){
+            return 854;
+        }
+
+        if(curWidth < 1000){
+            return 960;
+        }
+
+        if(curWidth < 1300){
+            return 1280;
+        }
+
+        if( curWidth < 1400){
+            return 1366;
+        }
+
+        if(curWidth < 1920){
+            return 1920;
+        }
+
+        if(curWidth < 2600){
+            return 2560;
+        }
+
+        if(curWidth < 4150){
+            return 4096;
+        }
+
+        return curWidth;
     }
 
     private ArrayList<BookInformation> loadPercentRead(int type){
@@ -338,11 +397,13 @@ public class PDFContentActivity extends AppCompatActivity {
             listPdfPages.setVisibility(View.INVISIBLE);
         }
 
-        int pageWidth = screenWidth;
+        pagePdfWidth = screenWidth;
         Bitmap bitmap;
         if (numPages <= 20){
             while (nextPageIndex < numPages){
                 mCurrentPage = mPdfRenderer.openPage(nextPageIndex);
+                pagePdfWidth = mCurrentPage.getWidth();
+                pagePdfHeight = mCurrentPage.getHeight();
 
                 try {
                     bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.RGB_565);
@@ -362,7 +423,8 @@ public class PDFContentActivity extends AppCompatActivity {
         }else{
             while (nextPageIndex < 20){
                 mCurrentPage = mPdfRenderer.openPage(nextPageIndex);
-                pageWidth = mCurrentPage.getWidth();
+                pagePdfWidth = mCurrentPage.getWidth();
+                pagePdfHeight = mCurrentPage.getHeight();
 
                 try {
                     bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.RGB_565);
@@ -380,7 +442,7 @@ public class PDFContentActivity extends AppCompatActivity {
             }
         }
 
-        setListPdfPagesAdapter(pageWidth);
+        setListPdfPagesAdapter(pagePdfWidth);
     }
 
     private void setListPdfPagesAdapter(int pageWidth){
@@ -868,6 +930,7 @@ public class PDFContentActivity extends AppCompatActivity {
         getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
 
         defaultBackgroundColor = color;
+        listPdfPages.setBackgroundColor(Color.parseColor(defaultBackgroundColor));
         moveToPage(currentPage);
     }
 }

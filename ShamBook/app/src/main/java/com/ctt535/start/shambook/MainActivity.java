@@ -42,7 +42,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -250,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
                     viewBookInformationInScreenAsList(allBooks, 1);
             }
         }else{
-            showDialogConfirm("Are you sure you  want to exit Shame Book ?");
+            showDialogConfirm("Are you sure you  want to exit Sham Book ?");
         }
     }
 
@@ -415,10 +414,11 @@ public class MainActivity extends AppCompatActivity {
                     case 7:
                         new AlertDialog.Builder(context)
                             .setIcon(R.drawable.ic_information)
-                            .setTitle("About Sambook")
-                            .setMessage("This application is used to read electronic books with the formats include: .epub, .pdf and " +
-                                "developed by MinhDai-AnhTuan\n\n" +
-                                "Email: 1353006@student.hcmus.edu.vn - 1353041@student.hcmus.edu.vn")
+                            .setTitle("About Sham book")
+                            .setMessage("Sham book is a application used to read the popular electronic book formats.\n" +
+                                    "Currently, Sham book can read two formats: .epub, .pdf\n\n" +
+                                    "This app developed by MinhDai-AnhTuan\n" +
+                                    "Email: 1353006@student.hcmus.edu.vn - 1353041@student.hcmus.edu.vn")
                             .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
@@ -427,7 +427,7 @@ public class MainActivity extends AppCompatActivity {
                             }).show();
                         break;
                     case 8:
-                        showDialogConfirm("Are you sure you  want to exit Shame Book ?");
+                        showDialogConfirm("Are you sure you  want to exit Sham Book ?");
                         break;
                 }
             }
@@ -670,7 +670,7 @@ public class MainActivity extends AppCompatActivity {
         //type = 1: choose file button call, type = 2: choose folder button call
 
         //Set margin bottom for list view, because, if not, it will be hid beside the bottom buttons.
-        marginBottom.setMargins(0, 0, 0, 120); //left,top,right,bottom
+        marginBottom.setMargins(0, 0, 0, 150); //left,top,right,bottom
         listBookLayout.setLayoutParams(marginBottom);
 
         Button btnBackDirectory = (Button) findViewById(R.id.btnBackDirectory);
@@ -680,6 +680,7 @@ public class MainActivity extends AppCompatActivity {
         if (type == 1)
             btnChooseThisFolder.setVisibility(View.GONE);
         else{
+            btnChooseThisFolder.setVisibility(View.VISIBLE);
             //Set click event for button choose folder
             if(btnChooseThisFolder != null) {
                 btnChooseThisFolder.setOnClickListener(new View.OnClickListener() {
@@ -1012,7 +1013,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-
         return booksOpen;
     }
 
@@ -1041,7 +1041,7 @@ public class MainActivity extends AppCompatActivity {
             showDialogErrorReadFile("'" + folderName + "' doesn't contain any file with .epub, pdf extension");
         else {
             ArrayList<String> remainBooks = removeBookExited(listBookChoosed, "list_book");
-            if (remainBooks.size() == 0) {
+            if (remainBooks == null || remainBooks.size() == 0) {
                 showDialogErrorReadFile("'" + folderName + "' contains the books already added to library");
                 return;
             }
@@ -1127,7 +1127,7 @@ public class MainActivity extends AppCompatActivity {
 
             epubInputStream.close();
             return bookInfo;
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.e("error", "Can't read '" + value + "'");
             return  null;
         }
@@ -1269,13 +1269,12 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        progress = ProgressDialog.show(context, "Please wait...", "Loading all books..." , true);
+        progress = ProgressDialog.show(context, "Please wait...", "Reading all books..." , true);
 
         Thread t = new Thread() {
             @Override
             public void run(){
                 allBooksOpened = new ArrayList<>();
-
                 for (int i=0; i<paths.size(); i++){
                     String [] extension = paths.get(i).split("\\.");
                     if(extension[extension.length - 1].toLowerCase().equals("epub")) {

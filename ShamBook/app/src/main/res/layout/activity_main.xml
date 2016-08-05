@@ -31,10 +31,13 @@
             android:layout_height="match_parent"
             android:columnWidth="100dp"
             android:numColumns="auto_fit"
-            android:verticalSpacing="20dp"
-            android:horizontalSpacing="20dp"
+            android:verticalSpacing="10dp"
+            android:horizontalSpacing="10dp"
             android:stretchMode="columnWidth"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp" />
 
         <LinearLayout
             android:id="@+id/handleFileBtn"

@@ -41,7 +41,7 @@ public class GridBookAdapter extends BaseAdapter {
 
         if (convertView == null) {
             imageView = new ImageView(mContext);
-            imageView.setLayoutParams(new GridView.LayoutParams(300, 370));
+            imageView.setLayoutParams(new GridView.LayoutParams(350, 440));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         }
         else{
