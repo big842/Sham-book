@@ -18,9 +18,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -140,6 +140,12 @@ public class EpubContentActivity extends AppCompatActivity {
 
         webSettingsContent = webviewContent.getSettings();
         webviewContent.getSettings().setJavaScriptEnabled(true);
+        webviewContent.setHorizontalScrollBarEnabled(false);
+        webviewContent.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                return (event.getAction() == MotionEvent.ACTION_MOVE);
+            }
+        });
 
         //Get book path, background color, textsize stored in the previous activity
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
@@ -298,7 +304,7 @@ public class EpubContentActivity extends AppCompatActivity {
         int chapPos = 0;
         StringBuilder listBookContentHtml = new StringBuilder();
         listBookContentHtml.append("<!DOCTYPE html><html>" +
-                "<header><style>img{width: 100%; height: 100%;} body{max-width: 100%;}</style></header><body>\n");
+                "<header><style>img{width: 100%; height: 100%;} body{max-width: 100%; margin: auto;}</style></header><body>\n");
         for (String chapter: listChapterFile){
 
             String []fName = chapter.split("\\.");

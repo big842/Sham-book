@@ -10,12 +10,17 @@
         android:id="@+id/frameChapter"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
-        <WebView
+        <ScrollView
+            android:id="@+id/vertialScroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/webviewContent"
-            android:layout_margin="5dp"/>
+            android:scrollbars="vertical">
+            <WebView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/webviewContent"
+                android:layout_margin="5dp"/>
+        </ScrollView>
 
         <com.ctt535.start.shambook.CustomHorizontalScrollView
             android:id="@+id/horizontalScroll"

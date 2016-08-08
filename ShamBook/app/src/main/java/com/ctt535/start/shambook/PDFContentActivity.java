@@ -33,6 +33,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -64,7 +65,7 @@ public class PDFContentActivity extends AppCompatActivity {
     private ZoomListView listPdfPages;
     private DrawerLayout tableOfChapters;
     private ListView leftDrawer;
-    private WebView webviewContent;
+    private ScrollView verticalScroll;
 
     private ParcelFileDescriptor mFileDescriptor;
     private PdfRenderer mPdfRenderer;
@@ -129,10 +130,10 @@ public class PDFContentActivity extends AppCompatActivity {
         screenWidth = size.x;
 
         //Find view by ids and hide webviewContent, because file that is reading is pdf
-        webviewContent = (WebView) findViewById(R.id.webviewContent);
+        verticalScroll = (ScrollView) findViewById(R.id.vertialScroll);
         scrollView = (CustomHorizontalScrollView)findViewById(R.id.horizontalScroll);
         listPdfPages = (ZoomListView) findViewById(R.id.listPdfPages);
-        webviewContent.setVisibility(View.GONE);
+        verticalScroll.setVisibility(View.GONE);
 
         //Set function for image button in leftview
         setFunctionForLeftImageButton();
