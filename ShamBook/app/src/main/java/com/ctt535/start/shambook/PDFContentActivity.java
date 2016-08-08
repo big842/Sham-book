@@ -6,6 +6,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -45,6 +47,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -54,6 +57,8 @@ public class PDFContentActivity extends AppCompatActivity {
     private Context context;
     private Handler hLoadPDF;
     private View lastChapter;
+
+    private SQLiteDatabase bookLibrary;
 
     private CustomHorizontalScrollView scrollView;
     private ZoomListView listPdfPages;
@@ -70,7 +75,7 @@ public class PDFContentActivity extends AppCompatActivity {
     private ImageButton tableContentBtn;
     private ImageButton settingBtn;
 
-    private BookInformation currentBookInfo;
+    private BookInformation bookInfo;
     private ArrayAdapter settingAdapter;
     private ArrayAdapter chapterAdapter;
 
@@ -87,15 +92,11 @@ public class PDFContentActivity extends AppCompatActivity {
     private int nextPageIndex = 0;
     private int prePageIndex = 0;
     private int screenWidth;
-    private int screenHeight;
     private int lastPage;
     private int currentPage = 0;
     private int seekPagePos = 0;
-    private int percentRead = 0;
     private int pagePdfWidth;
-    private int pagePdfHeight;
     private float scalePage = 1.0f;
-    private String currentBookPath;
     private String defaultBackgroundColor;
 
     @Override
@@ -126,7 +127,6 @@ public class PDFContentActivity extends AppCompatActivity {
         Point size = new Point();
         display.getSize(size);
         screenWidth = size.x;
-        screenHeight = size.y;
 
         //Find view by ids and hide webviewContent, because file that is reading is pdf
         webviewContent = (WebView) findViewById(R.id.webviewContent);
@@ -139,9 +139,8 @@ public class PDFContentActivity extends AppCompatActivity {
 
         //Get book path store in the previous activity and default background color and percent read
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        currentBookPath = settings.getString("currentBookPath", "");
+        String currentBookPath = settings.getString("currentBookPath", "");
         defaultBackgroundColor = settings.getString("pdfBackgroundColor", "#ffffff");
-        loadPercentRead(0);
         listPdfPages.setBackgroundColor(Color.parseColor(defaultBackgroundColor));
 
         //Find ids of leftview layout
@@ -149,19 +148,16 @@ public class PDFContentActivity extends AppCompatActivity {
         leftDrawer = (ListView) findViewById(R.id.listChapter);
 
         //Show pdf content(pages) and bookmark
-
         try {
             File file = new File(currentBookPath);
-            PdfReader pdfReader = new PdfReader(file.getAbsolutePath());
-            currentBookInfo = readBookInformation(pdfReader, currentBookPath);
             mFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
             mPdfRenderer = new PdfRenderer(mFileDescriptor);
+            bookInfo = readBookInformation(currentBookPath);
             numPages = mPdfRenderer.getPageCount();
             listPages = new Bitmap[numPages];
             settingListPdfPages();
             showFirstBookContent();
-
-            loadPDFBookmark(pdfReader);
+            loadPDFBookmark(file);
         }catch (Exception ex){
             ex.printStackTrace();
         }
@@ -179,7 +175,6 @@ public class PDFContentActivity extends AppCompatActivity {
         Point size = new Point();
         display.getSize(size);
         screenWidth = size.x;
-        screenHeight = size.y;
 
         if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
             screenWidth = getActualScreenWidthLanscape(screenWidth);
@@ -203,8 +198,8 @@ public class PDFContentActivity extends AppCompatActivity {
             Log.e("mFileDescriptor Error", "Can't close mFileDescriptor");
         }
 
-        ArrayList<BookInformation> lsPath = loadPercentRead(1);
-        writeBookRecentRead(lsPath);
+        updatePercentReadBooks(bookInfo.getId());
+        bookLibrary.close();
 
         Intent intent = new Intent(PDFContentActivity.this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -244,57 +239,13 @@ public class PDFContentActivity extends AppCompatActivity {
         return curWidth;
     }
 
-    private ArrayList<BookInformation> loadPercentRead(int type){
-        //type: 0 - load percent read, 1 - save percenread
+    private void updatePercentReadBooks(int bookId){
+        int precentRead = (int)Math.round((currentPage *1.0 *100)/numPages);
+        Date today = new Date();
+        String sql = "update books set date_read="+ today.getTime() +", percent_read = "
+                + precentRead + ", current_page = " + currentPage + " where id = " + bookId;
         try {
-            File secondInputFile = new File(getFilesDir(), "list_recent_book");
-            InputStream secondInputStream = new BufferedInputStream(new FileInputStream(secondInputFile));
-            BufferedReader r = new BufferedReader(new InputStreamReader(secondInputStream));
-            ArrayList<BookInformation> lsPath = new ArrayList<>();
-
-            String line;
-            while ((line = r.readLine()) != null) {
-                BookInformation bf = new BookInformation();
-                bf.filePath = line;
-                line = r.readLine();
-                bf.precentRead = Integer.parseInt(line);
-
-                if(bf.filePath.equals(currentBookPath)){
-                    if(type == 0) {
-                        percentRead = bf.precentRead;
-                        return null;
-                    }else{
-                        bf.precentRead = (int)Math.round((currentPage *1.0 *100)/numPages);
-                    }
-                }
-                lsPath.add(bf);
-            }
-            r.close();
-            secondInputStream.close();
-            return lsPath;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private void writeBookRecentRead(ArrayList<BookInformation> booksOpen){
-        String data = "";
-        for (int i = 0; i< booksOpen.size() - 1; i++) {
-            data += booksOpen.get(i).filePath +"\n";
-            data += booksOpen.get(i).precentRead +"\n";
-        }
-        data += booksOpen.get(booksOpen.size() - 1).filePath + "\n";
-        data += booksOpen.get(booksOpen.size() - 1).precentRead;
-
-        try {
-            File secondFile = new File(getFilesDir(), "list_recent_book");
-            secondFile.createNewFile();
-            FileOutputStream fos = new FileOutputStream(secondFile);
-
-            fos.write(data.getBytes());
-            fos.flush();
-            fos.close();
+            bookLibrary.execSQL(sql);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -374,26 +325,34 @@ public class PDFContentActivity extends AppCompatActivity {
         });
     }
 
-    private BookInformation readBookInformation(PdfReader pdfReader, String currentBookPath){
+    private BookInformation readBookInformation(String currentBookPath){
         BookInformation bookInfo = new BookInformation();
+        String databaseBookPath = getApplication().getFilesDir() + "/" + "book_library";
+        bookLibrary = SQLiteDatabase.openDatabase(databaseBookPath, null, SQLiteDatabase.OPEN_READWRITE);
 
-        bookInfo.filePath = currentBookPath;
-        bookInfo.title = pdfReader.getInfo().get("Title");
-        if(bookInfo.title.isEmpty()){
-            String []temp = currentBookPath.split("\\/");
-            bookInfo.title = temp[temp.length -1];
+        try {
+            String sql = "select * from books where path = '" + currentBookPath + "'";
+            Cursor cur = bookLibrary.rawQuery(sql, null);
+            cur.moveToFirst();
+
+            bookInfo.setId(cur.getInt(0));
+            bookInfo.setName(cur.getString(1));
+            bookInfo.setAuthors(cur.getString(2));
+            bookInfo.setFormat(cur.getString(3));
+            bookInfo.setFilePath(cur.getString(4));
+            bookInfo.setPrecentRead(cur.getInt(6));
+            bookInfo.setCurrentPage(cur.getInt(7));
+            bookInfo.setTotalPage(cur.getInt(8));
+
+            return bookInfo;
+        }catch (Exception ex){
+            ex.printStackTrace();
+            return null;
         }
-
-        bookInfo.authors = pdfReader.getInfo().get("Author");
-        bookInfo.authors = pdfReader.getInfo().get("Author");
-        bookInfo.format = "pdf";
-        bookInfo.precentRead = 0;
-
-        return bookInfo;
     }
 
     private void showFirstBookContent(){
-        if(percentRead != 0){
+        if(bookInfo.getPrecentRead() != 0){
             listPdfPages.setVisibility(View.INVISIBLE);
         }
 
@@ -403,17 +362,10 @@ public class PDFContentActivity extends AppCompatActivity {
             while (nextPageIndex < numPages){
                 mCurrentPage = mPdfRenderer.openPage(nextPageIndex);
                 pagePdfWidth = mCurrentPage.getWidth();
-                pagePdfHeight = mCurrentPage.getHeight();
 
-                try {
-                    bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.RGB_565);
-                    bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                    mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                }catch(Exception ex){
-                    bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.ARGB_4444);
-                    bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                    mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                }
+                bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.ARGB_8888);
+                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
+                mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
 
                 mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
                 listPages[nextPageIndex] = bitmap;
@@ -424,17 +376,10 @@ public class PDFContentActivity extends AppCompatActivity {
             while (nextPageIndex < 20){
                 mCurrentPage = mPdfRenderer.openPage(nextPageIndex);
                 pagePdfWidth = mCurrentPage.getWidth();
-                pagePdfHeight = mCurrentPage.getHeight();
 
-                try {
-                    bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.RGB_565);
-                    bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                    mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                }catch(Exception ex){
-                    bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.ARGB_4444);
-                    bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                    mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                }
+                bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.ARGB_8888);
+                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
+                mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
                 listPages[nextPageIndex] = bitmap;
 
                 nextPageIndex ++;
@@ -456,8 +401,8 @@ public class PDFContentActivity extends AppCompatActivity {
         lPDFViewAdapter = new ListPDFViewAdapter(this, listPages);
         listPdfPages.setAdapter(lPDFViewAdapter);
 
-        if(percentRead != 0){
-            currentPage = (int)  Math.round((percentRead * numPages *1.0)/100);
+        if(bookInfo.getCurrentPage() != 0){
+            currentPage = bookInfo.getCurrentPage();
             moveToPage(currentPage);
         }
     }
@@ -476,7 +421,7 @@ public class PDFContentActivity extends AppCompatActivity {
             public void run() {
                 int t = 0;
                 try {
-                    File file = new File(currentBookPath);
+                    File file = new File(bookInfo.getFilePath());
                     ParcelFileDescriptor fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
                     PdfRenderer pdfRenderer = new PdfRenderer(fileDescriptor);
                     Page newPage;
@@ -486,15 +431,9 @@ public class PDFContentActivity extends AppCompatActivity {
                         while (t < numLoad) {
                             setBitmapValue(getPrePageIndex(), null);
                             newPage = pdfRenderer.openPage(getNextPageIndex());
-                            try {
-                                bitmap = Bitmap.createBitmap(newPage.getWidth(), newPage.getHeight(), Bitmap.Config.RGB_565);
-                                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                                newPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                            }catch(Exception ex){
-                                bitmap = Bitmap.createBitmap(newPage.getWidth(), newPage.getHeight(), Bitmap.Config.ARGB_4444);
-                                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                                newPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                            }
+                            bitmap = Bitmap.createBitmap(newPage.getWidth(), newPage.getHeight(), Bitmap.Config.ARGB_8888);
+                            bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
+                            newPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
                             setBitmapValue(getNextPageIndex(), bitmap);
 
                             increasePrePage(1);
@@ -509,15 +448,9 @@ public class PDFContentActivity extends AppCompatActivity {
                             setBitmapValue(getNextPageIndex(), null);
                             newPage = pdfRenderer.openPage(getPrePageIndex());
 
-                            try {
-                                bitmap = Bitmap.createBitmap(newPage.getWidth(), newPage.getHeight(), Bitmap.Config.RGB_565);
-                                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                                newPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                            }catch(Exception ex){
-                                bitmap = Bitmap.createBitmap(newPage.getWidth(), newPage.getHeight(), Bitmap.Config.ARGB_4444);
-                                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                                newPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-                            }
+                            bitmap = Bitmap.createBitmap(newPage.getWidth(), newPage.getHeight(), Bitmap.Config.ARGB_8888);
+                            bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
+                            newPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
                             setBitmapValue(getPrePageIndex(), bitmap);
 
                             t++;
@@ -565,11 +498,12 @@ public class PDFContentActivity extends AppCompatActivity {
         listPages[pos] = b;
     }
 
-    public void loadPDFBookmark(PdfReader pdfReader){
+    public void loadPDFBookmark(File file){
         listPdfBooknark = new ArrayList<>();
         listBookmarkPosition = new ArrayList<>();
         try
         {
+            PdfReader pdfReader = new PdfReader(file.getAbsolutePath());
             List<HashMap<String, Object>> bookmarks = SimpleBookmark.getBookmark(pdfReader);
             for(int i=0; i<bookmarks.size(); i++){
                 loadChildPDFBookmark(bookmarks.get(i));
@@ -628,13 +562,15 @@ public class PDFContentActivity extends AppCompatActivity {
         };
 
         leftDrawer.setAdapter(chapterAdapter);
-        leftDrawer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                tableOfChapters.closeDrawers();
-                showContentInChapter(view, position);
-            }
-        });
+        if(listPdfBooknark.size() != 1) {
+            leftDrawer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    tableOfChapters.closeDrawers();
+                    showContentInChapter(view, position);
+                }
+            });
+        }
     }
 
     private void showContentInChapter(View view, int pos){
@@ -648,7 +584,7 @@ public class PDFContentActivity extends AppCompatActivity {
     private void moveToPage(int page){
         //type: 1 - first load call, 2-other function call
 
-        int newNextPage, newPrePage, pageWidth = screenWidth;
+        int newNextPage, newPrePage;
 
         listPdfPages.setVisibility(View.INVISIBLE);
         if(numPages - page > 10){
@@ -667,17 +603,9 @@ public class PDFContentActivity extends AppCompatActivity {
         Bitmap bitmap;
         while (t < newNextPage){
             mCurrentPage = mPdfRenderer.openPage(t);
-            pageWidth = mCurrentPage.getWidth();
-
-            try {
-                bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.RGB_565);
-                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-            }catch(Exception ex){
-                bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.ARGB_4444);
-                bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
-                mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
-            }
+            bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.ARGB_8888);
+            bitmap.eraseColor(Color.parseColor(defaultBackgroundColor));
+            mCurrentPage.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
 
             if(prePageIndex < newPrePage){
                 listPages[prePageIndex] = null;
@@ -690,7 +618,8 @@ public class PDFContentActivity extends AppCompatActivity {
         }
 
         lPDFViewAdapter.notifyDataSetChanged();
-        listPdfPages.smoothScrollToPosition(page);
+        listPdfPages.setAdapter(lPDFViewAdapter);
+        listPdfPages.setSelection(page);
         listPdfPages.setVisibility(View.VISIBLE);
         prePageIndex = newPrePage;
         nextPageIndex = newNextPage;
@@ -723,10 +652,10 @@ public class PDFContentActivity extends AppCompatActivity {
                     new AlertDialog.Builder(context)
                     .setIcon(R.drawable.ic_information)
                     .setTitle("Book Information")
-                    .setMessage("Title: " + currentBookInfo.title +
-                        "\n\nAuthors: " + currentBookInfo.authors +
-                        "\n\nFormat: " + currentBookInfo.format +
-                        "\n\nBook path: " + currentBookInfo.filePath)
+                    .setMessage("Name: " + bookInfo.getName() +
+                        "\n\nAuthors: " + bookInfo.getAuthors() +
+                        "\n\nFormat: " + bookInfo.getFormat() +
+                        "\n\nBook path: " + bookInfo.getFilePath())
                     .setPositiveButton("OK",  new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {

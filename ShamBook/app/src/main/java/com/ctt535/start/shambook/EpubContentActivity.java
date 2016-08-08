@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Handler;
@@ -18,6 +20,7 @@ import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -38,6 +41,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +60,7 @@ public class EpubContentActivity extends AppCompatActivity {
     private Context context;
 
     private ProgressDialog progress;
+    private SQLiteDatabase bookLibrary;
 
     private Book currentBook;
     private View lastChapter;
@@ -72,7 +77,6 @@ public class EpubContentActivity extends AppCompatActivity {
 
     private BookInformation currentBookInfo;
     private ArrayList<String> listBookChapter;
-    private ArrayList<String> listBookContent;
     private ArrayList<String> listChapterFile;
 
     private ArrayList<String> listSettingText;
@@ -85,9 +89,10 @@ public class EpubContentActivity extends AppCompatActivity {
     private int newUiOptions;
     private int defautTextSize;
     private int defaultBackgroundColor;
+    private int contentHeight;
+    private int currentScrollY;
     private String defaultTextColor;
     private String bookSourcePath;
-    private StringBuilder bookHtml;
 
     Handler hReadBook = new Handler() {
         @Override
@@ -135,18 +140,6 @@ public class EpubContentActivity extends AppCompatActivity {
 
         webSettingsContent = webviewContent.getSettings();
         webviewContent.getSettings().setJavaScriptEnabled(true);
-        webviewContent.setWebViewClient( new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                for (int i=0; i< listChapterFile.size(); i++) {
-                    if (url.contains(listChapterFile.get(i))) {
-                        leftDrawer.performItemClick(leftDrawer.getChildAt(i), i, leftDrawer.getItemIdAtPosition(i));
-                        return true;
-                    }
-                }
-                return true;
-            }
-        });
 
         //Get book path, background color, textsize stored in the previous activity
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
@@ -183,12 +176,11 @@ public class EpubContentActivity extends AppCompatActivity {
 
                         // Load Book from inputStream and load resource
                         currentBook = (new EpubReader()).readEpub(epubInputStream);
-                        currentBookInfo = readBookInformation(currentBook, currentBookPath);
+                        currentBookInfo = readBookInformation(currentBookPath);
                         loadResource(bookSourcePath, currentBook);
 
                         listBookChapter = new ArrayList<>();
                         listChapterFile = new ArrayList<>();
-                        listBookContent = new ArrayList<>();
 
                         Message msg = hReadBook.obtainMessage();
                         hReadBook.sendMessage(msg);
@@ -205,6 +197,7 @@ public class EpubContentActivity extends AppCompatActivity {
     Handler hBackPress = new Handler() {
         @Override
         public void handleMessage(Message msg) {
+            bookLibrary.close();
             Intent intent = new Intent(EpubContentActivity.this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             progress.dismiss();
@@ -215,7 +208,10 @@ public class EpubContentActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed(){
+        currentScrollY = webviewContent.getScrollY();
+        contentHeight = Math.round((float)webviewContent.getContentHeight() * webviewContent.getScale());
         progress = ProgressDialog.show(context, "Please wait...", "Saving book..." , true);
+
         Thread t = new Thread(){
             @Override
             public void run(){
@@ -223,6 +219,9 @@ public class EpubContentActivity extends AppCompatActivity {
                     //Delete book resource folder that already created
                     File file = new File(bookSourcePath);
                     deleteDirectory(file);
+
+                    //Update percent read to database
+                    updatePercentReadBooks(currentBookInfo.getId());
 
                     Message msg = hBackPress.obtainMessage();
                     hBackPress.sendMessage(msg);
@@ -240,6 +239,19 @@ public class EpubContentActivity extends AppCompatActivity {
         super.onActionModeFinished(mode);
 
         getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
+    }
+
+    private void updatePercentReadBooks(int bookId){
+        int precentRead = (int)Math.round((currentScrollY *1.0 *100)/contentHeight);
+
+        Date today = new Date();
+        String sql = "update books set date_read="+ today.getTime() +", percent_read = "+ precentRead
+                + ", current_page = " + currentScrollY + ", total_page = "+ contentHeight + " where id = " + bookId;
+        try {
+            bookLibrary.execSQL(sql);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void initSettingList(){
@@ -263,7 +275,13 @@ public class EpubContentActivity extends AppCompatActivity {
 
         for (TOCReference tocReference : tocReferences) {
             //Save files position of book content
-            listChapterFile.add(tocReference.getResource().getHref());
+            String href = tocReference.getResource().getHref();
+            if(listChapterFile.size() > 0) {
+                if (!href.equals(listChapterFile.get(listChapterFile.size() - 1)))
+                    listChapterFile.add(tocReference.getResource().getHref());
+            }else{
+                listChapterFile.add(href);
+            }
 
             listBookChapter.add(tocReference.getTitle());
             readTableContent(tocReference.getChildren());
@@ -271,52 +289,107 @@ public class EpubContentActivity extends AppCompatActivity {
     }
 
     private void readBookContent(Book currentBook){
+        if(currentBookInfo.getCurrentPage() != 0)
+            webviewContent.setVisibility(View.INVISIBLE);
+
         Spine spine = currentBook.getSpine();
         List<SpineReference> spineList = spine.getSpineReferences();
         int count = spineList.size();
         int chapPos = 0;
+        StringBuilder listBookContentHtml = new StringBuilder();
+        listBookContentHtml.append("<!DOCTYPE html><html>" +
+                "<header><style>img{width: 100%; height: 100%;} body{max-width: 100%;}</style></header><body>\n");
+        for (String chapter: listChapterFile){
 
-        bookHtml = new StringBuilder();
-        bookHtml.append("<!DOCTYPE html><html><header><style>img{width: 100%; height: 100%;} body{width: 100%;}" +
-                "</style></header></html>\n");
+            String []fName = chapter.split("\\.");
 
+            try {
+                listBookContentHtml.append("<a id='chapter_" + chapter + "' href='#" + fName[0] + "'></a>");
+            }catch (Exception ex){
+                listBookContentHtml.append("<a id='chapter_" + chapter + "' href='#" + chapter + "'></a>");
+            }
+        }
+        listBookContentHtml.append("</body></html>\n");
+
+        StringBuilder bookHtml = new StringBuilder();
         for (int i = 0; i < count; i++) {
             try {
                 Resource res = spine.getResource(i);
                 InputStream is = res.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 String fileName = res.getHref();
+                boolean foundBody = false;
 
                 String line;
                 while ((line = reader.readLine()) != null) {
                     line = line.replace("../", "");
+                    if(!foundBody){
+                        if(line.contains("<body")){
+                            foundBody = true;
+                            if(chapPos < listChapterFile.size() - 1 && fileName.equals(listChapterFile.get(chapPos))) {
+                                String []fName = fileName.split("\\.");
+                                try {
+                                    line += "\n<a id='" + fName[0] + "'></a>";
+                                }catch (Exception ex){
+                                    line += "\n<a id='" + fileName + "'></a>";
+                                }
+                            }
+                        }
+                    }
                     bookHtml.append(line + "\n").toString();
                 }
 
                 if(chapPos < listChapterFile.size() - 1) {
                     if (fileName.equals(listChapterFile.get(chapPos))) {
-                        listBookContent.add(bookHtml.toString());
+                        listBookContentHtml.append(bookHtml);
                         bookHtml = new StringBuilder();
                         chapPos++;
                     }
                 }
-
                 res.close();is.close();reader.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        listBookContent.add(bookHtml.toString());
-
-        bookHtml = new StringBuilder();
-        for (String content: listBookContent)
-            bookHtml.append(content);
-
-        webviewContent.loadDataWithBaseURL("file://"+ bookSourcePath, bookHtml.toString(), "text/html", "utf-8", null);
+        listBookContentHtml.append(bookHtml);
+        webviewContent.loadDataWithBaseURL("file://"+ bookSourcePath, listBookContentHtml.toString(), "text/html", "utf-8", null);
         if(defaultTextColor != ""){
             webviewContent.loadUrl("javascript:document.body.style.setProperty" +
                     "(\"color\", \"" + defaultTextColor + "\");");
         }
+
+        webviewContent.setWebViewClient(new WebViewClient(){
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if(currentBookInfo.getCurrentPage() != 0) {
+                    webviewContent.setScrollY(currentBookInfo.getCurrentPage());
+                    webviewContent.setVisibility(View.VISIBLE);
+                }else{
+                    webviewContent.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                for (int i=0; i< listChapterFile.size(); i++) {
+                    String []fName = listChapterFile.get(i).split("/");
+                    if(fName.length > 1){
+                        if (url.contains(fName[fName.length - 1])) {
+                            leftDrawer.performItemClick(leftDrawer.getChildAt(i), i, leftDrawer.getItemIdAtPosition(i));
+                            return true;
+                        }
+                    }else{
+                        if (url.contains(listChapterFile.get(i))) {
+                            leftDrawer.performItemClick(leftDrawer.getChildAt(i), i, leftDrawer.getItemIdAtPosition(i));
+                            return true;
+                        }
+                    }
+                }
+                return true;
+            }
+        });
+
     }
 
     private void setFunctionForLeftImageButton(){
@@ -364,10 +437,10 @@ public class EpubContentActivity extends AppCompatActivity {
                     new AlertDialog.Builder(context)
                             .setIcon(R.drawable.ic_information)
                             .setTitle("Book Information")
-                            .setMessage("Title: " + currentBookInfo.title +
-                                    "\n\nAuthors: " + currentBookInfo.authors +
-                                    "\n\nFormat: " + currentBookInfo.format +
-                                    "\n\nBook path: " + currentBookInfo.filePath)
+                            .setMessage("Title: " + currentBookInfo.getName() +
+                                    "\n\nAuthors: " + currentBookInfo.getAuthors() +
+                                    "\n\nFormat: " + currentBookInfo.getFormat() +
+                                    "\n\nBook path: " + currentBookInfo.getFilePath())
                             .setPositiveButton("OK",  new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
@@ -546,7 +619,7 @@ public class EpubContentActivity extends AppCompatActivity {
         btnIncrease.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(defautTextSize < 60) {
+                if(defautTextSize < 50) {
                     defautTextSize++;
                     txtTextSize.setText(String.format(Locale.getDefault(),"%d", defautTextSize));
                 }
@@ -765,12 +838,14 @@ public class EpubContentActivity extends AppCompatActivity {
         };
 
         leftDrawer.setAdapter(chapterAdapter);
-        leftDrawer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                showContentInChapter(view, position);
-            }
-        });
+        if (listBookChapter.size() != 1) {
+            leftDrawer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    showContentInChapter(view, position);
+                }
+            });
+        }
     }
 
     private boolean createBookResourceFolder(String currentBookPath){
@@ -795,22 +870,30 @@ public class EpubContentActivity extends AppCompatActivity {
         return res;
     }
 
-    private BookInformation readBookInformation(Book book, String currentBookPath){
+    private BookInformation readBookInformation(String currentBookPath){
         BookInformation bookInfo = new BookInformation();
+        String databaseBookPath = getApplication().getFilesDir() + "/" + "book_library";
+        bookLibrary = SQLiteDatabase.openDatabase(databaseBookPath, null, SQLiteDatabase.OPEN_READWRITE);
 
-        bookInfo.authors = book.getMetadata().getAuthors().toString();
-        bookInfo.title = book.getTitle();
-        bookInfo.filePath = currentBookPath;
-        bookInfo.type = book.getMetadata().getTypes().toString();
-        bookInfo.publishers = book.getMetadata().getPublishers().toString();
-        bookInfo.precentRead = 0;
+        try {
+            String sql = "select * from books where path = '" + currentBookPath + "'";
+            Cursor cur = bookLibrary.rawQuery(sql, null);
+            cur.moveToFirst();
 
-        //Get book format
-        String bformat = book.getMetadata().getFormat();
-        if (bformat.toLowerCase().contains("epub"))
-            bookInfo.format = "epub";
+            bookInfo.setId(cur.getInt(0));
+            bookInfo.setName(cur.getString(1));
+            bookInfo.setAuthors(cur.getString(2));
+            bookInfo.setFormat(cur.getString(3));
+            bookInfo.setFilePath(cur.getString(4));
+            bookInfo.setPrecentRead(cur.getInt(6));
+            bookInfo.setCurrentPage(cur.getInt(7));
+            bookInfo.setTotalPage(cur.getInt(8));
 
-        return bookInfo;
+            return bookInfo;
+        }catch (Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
     }
 
     private void loadResource(String directory, Book currentBook) {
@@ -852,20 +935,12 @@ public class EpubContentActivity extends AppCompatActivity {
         if(lastChapter != null)
             lastChapter.setBackgroundColor(Color.WHITE);
 
-        lastChapter = view;
-        view.setBackgroundColor(0xFFD0F79A);
-        tableOfChapters.closeDrawers();
-
-        bookHtml = new StringBuilder();
-        for (int i = pos; i < listBookContent.size(); i++)
-            bookHtml.append(listBookContent.get(i));
-
-        webviewContent.loadDataWithBaseURL("file://"+ bookSourcePath, bookHtml.toString(), "text/html", "utf-8", null);
-
-        if(defaultTextColor != ""){
-            webviewContent.loadUrl("javascript:document.body.style.setProperty" +
-                    "(\"color\", \"" + defaultTextColor + "\");");
+        if(view != null) {
+            lastChapter = view;
+            view.setBackgroundColor(0xFFD0F79A);
         }
+        tableOfChapters.closeDrawers();
+        webviewContent.loadUrl("javascript:document.getElementById('chapter_"+ listChapterFile.get(pos)+ "').click();");
     }
 
     private boolean deleteDirectory(File directory) {

@@ -15,5 +15,6 @@
     <string name="choose_text_size">Text size</string>
     <string name="btn_decrease">\u003c</string>
     <string name="btn_increase">\u003e</string>
-    <string name="seek_to_page">Seek to page</string>
+    <string name="seek_to_page">Jump to page</string>
+    <string name="please_wait">Please wait\u002e\u002e\u002e</string>
 </resources>

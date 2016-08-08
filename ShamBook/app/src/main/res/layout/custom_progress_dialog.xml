@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!--<TextView-->
+        <!--android:text="@string/please_wait"-->
+        <!--android:layout_width="300dp"-->
+        <!--android:layout_height="50dp"-->
+        <!--android:textSize="25dp"-->
+        <!--android:layout_marginTop="15dp"-->
+        <!--android:layout_marginLeft="15dp"-->
+        <!--android:textStyle="bold" />-->
+
+    <!--<View-->
+        <!--android:id="@+id/splitLine"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height= "2dp"-->
+        <!--android:background="#9d9d9d" />-->
+
+        <!--<LinearLayout-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:orientation="horizontal">-->
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/progressBar"
+                style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large" />
+
+            <!--<TextView-->
+                <!--android:id="@+id/txtMessage"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content" />-->
+
+        <!--</LinearLayout>-->
+</LinearLayout>

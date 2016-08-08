@@ -15,15 +15,13 @@ public class ListBookAdapter extends ArrayAdapter<BookInformation> {
     Activity context;
     ArrayList<BookInformation> listBook;
     int backgroundColor;
-    boolean showAllBooks;
 
-    public ListBookAdapter(Activity context, ArrayList<BookInformation> listBook, int backgroundColor, boolean showAllBooks) {
+    public ListBookAdapter(Activity context, ArrayList<BookInformation> listBook, int backgroundColor) {
         super(context, R.layout.list_book_layout, listBook);
 
         this.context = context;
         this.listBook = listBook;
         this.backgroundColor = backgroundColor;
-        this.showAllBooks = showAllBooks;
     }
 
     public View getView(int position, View view, ViewGroup parent) {
@@ -37,22 +35,17 @@ public class ListBookAdapter extends ArrayAdapter<BookInformation> {
         TextView bookFormat = (TextView) rowView.findViewById(R.id.bookFormat);
         BookInformation bofo = listBook.get(position);
 
-        coverImage.setImageBitmap(bofo.coverImage);
-        bookTitle.setText(bofo.title);
+        coverImage.setImageBitmap(bofo.getCoverImage());
+        bookTitle.setText(bofo.getName());
 
-        String temp = "Format: " + bofo.format;
+        String temp = "Format: " + bofo.getFormat();
         bookFormat.setText(temp);
 
-        if(!showAllBooks) {
-            temp = "Read: " + bofo.precentRead + "%";
-            percentRead.setText(temp);
-        }else{
-            percentRead.setText("");
-        }
-
+        temp = "Read: " + bofo.getPrecentRead() + "%";
+        percentRead.setText(temp);
 
         try{
-            temp = "Authors: " + bofo.authors.substring(1, bofo.authors.length() - 1);
+            temp = "Authors: " + bofo.getAuthors().substring(1, bofo.getAuthors().length() - 1);
         }catch (Exception ex){
             temp = "Authors: Unknow";
         }
