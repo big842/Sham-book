@@ -33,20 +33,13 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.SimpleBookmark;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,7 +58,7 @@ public class PDFContentActivity extends AppCompatActivity {
     private ZoomListView listPdfPages;
     private DrawerLayout tableOfChapters;
     private ListView leftDrawer;
-    private ScrollView verticalScroll;
+    private WebView webviewContent;
 
     private ParcelFileDescriptor mFileDescriptor;
     private PdfRenderer mPdfRenderer;
@@ -130,10 +123,10 @@ public class PDFContentActivity extends AppCompatActivity {
         screenWidth = size.x;
 
         //Find view by ids and hide webviewContent, because file that is reading is pdf
-        verticalScroll = (ScrollView) findViewById(R.id.vertialScroll);
+        webviewContent = (WebView) findViewById(R.id.webviewContent);
         scrollView = (CustomHorizontalScrollView)findViewById(R.id.horizontalScroll);
         listPdfPages = (ZoomListView) findViewById(R.id.listPdfPages);
-        verticalScroll.setVisibility(View.GONE);
+        webviewContent.setVisibility(View.GONE);
 
         //Set function for image button in leftview
         setFunctionForLeftImageButton();

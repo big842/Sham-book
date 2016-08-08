@@ -140,12 +140,6 @@ public class EpubContentActivity extends AppCompatActivity {
 
         webSettingsContent = webviewContent.getSettings();
         webviewContent.getSettings().setJavaScriptEnabled(true);
-        webviewContent.setHorizontalScrollBarEnabled(false);
-        webviewContent.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                return (event.getAction() == MotionEvent.ACTION_MOVE);
-            }
-        });
 
         //Get book path, background color, textsize stored in the previous activity
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
@@ -304,16 +298,14 @@ public class EpubContentActivity extends AppCompatActivity {
         int count = spineList.size();
         int chapPos = 0;
         StringBuilder listBookContentHtml = new StringBuilder();
-        listBookContentHtml.append("<!DOCTYPE html><html>" +
-                "<header><style>img{width: 100%; height: 100%;} body{max-width: 100%; margin: auto;}</style></header><body>\n");
+        listBookContentHtml.append("<!DOCTYPE html><html><header><style>img{width: 100%; height: 100%;} " +
+                "body{max-width: 100% !important; margin: auto;}</style></header><body>\n");
         for (String chapter: listChapterFile){
-
             String []fName = chapter.split("\\.");
-
             try {
-                listBookContentHtml.append("<a id='chapter_" + chapter + "' href='#" + fName[0] + "'></a>");
+                listBookContentHtml.append("<a id='chapter_click_" + chapter + "' href='#chapter_name_" + fName[0] + "'></a>");
             }catch (Exception ex){
-                listBookContentHtml.append("<a id='chapter_" + chapter + "' href='#" + chapter + "'></a>");
+                listBookContentHtml.append("<a id='chapter_click_" + chapter + "' href='#chapter_name_" + chapter + "'></a>");
             }
         }
         listBookContentHtml.append("</body></html>\n");
@@ -336,9 +328,9 @@ public class EpubContentActivity extends AppCompatActivity {
                             if(chapPos < listChapterFile.size() - 1 && fileName.equals(listChapterFile.get(chapPos))) {
                                 String []fName = fileName.split("\\.");
                                 try {
-                                    line += "\n<a id='" + fName[0] + "'></a>";
+                                    line += "\n<a id='chapter_name_" + fName[0] + "'></a>";
                                 }catch (Exception ex){
-                                    line += "\n<a id='" + fileName + "'></a>";
+                                    line += "\n<a id='chapter_name_" + fileName + "'></a>";
                                 }
                             }
                         }
@@ -946,8 +938,9 @@ public class EpubContentActivity extends AppCompatActivity {
             lastChapter = view;
             view.setBackgroundColor(0xFFD0F79A);
         }
+        
         tableOfChapters.closeDrawers();
-        webviewContent.loadUrl("javascript:document.getElementById('chapter_"+ listChapterFile.get(pos)+ "').click();");
+        webviewContent.loadUrl("javascript:document.getElementById('chapter_click_"+ listChapterFile.get(pos)+ "').click();");
     }
 
     private boolean deleteDirectory(File directory) {
