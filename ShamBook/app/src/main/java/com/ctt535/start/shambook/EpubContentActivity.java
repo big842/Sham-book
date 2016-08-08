@@ -149,7 +149,7 @@ public class EpubContentActivity extends AppCompatActivity {
 
         //Get book path, background color, textsize stored in the previous activity
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        final String currentBookPath = settings.getString("currentBookPath", "");
+        final int currentBookID = settings.getInt("currentBookID", -1);
         defaultBackgroundColor = settings.getInt("epubBackgroundColor", -1);
         defaultTextColor = settings.getString("epubTextColor", "");
         defautTextSize = settings.getInt("epubTextSize", -1);
@@ -170,19 +170,20 @@ public class EpubContentActivity extends AppCompatActivity {
         setFunctionForLeftImageButton();
 
         //Read information of book
-        if(currentBookPath != null){
+        if(currentBookID != -1){
             progress = ProgressDialog.show(context, "Please wait...", "Loading book content..." , true);
             Thread t = new Thread(){
                 @Override
                 public void run(){
                     try {
+                        currentBookInfo = readBookInformation(currentBookID);
+
                         //Create book resources folder and load input stream
-                        createBookResourceFolder(currentBookPath);
-                        InputStream epubInputStream = new FileInputStream(currentBookPath);
+                        createBookResourceFolder(currentBookInfo.getFilePath());
+                        InputStream epubInputStream = new FileInputStream(currentBookInfo.getFilePath());
 
                         // Load Book from inputStream and load resource
                         currentBook = (new EpubReader()).readEpub(epubInputStream);
-                        currentBookInfo = readBookInformation(currentBookPath);
                         loadResource(bookSourcePath, currentBook);
 
                         listBookChapter = new ArrayList<>();
@@ -876,13 +877,13 @@ public class EpubContentActivity extends AppCompatActivity {
         return res;
     }
 
-    private BookInformation readBookInformation(String currentBookPath){
+    private BookInformation readBookInformation(int currentBookID){
         BookInformation bookInfo = new BookInformation();
         String databaseBookPath = getApplication().getFilesDir() + "/" + "book_library";
         bookLibrary = SQLiteDatabase.openDatabase(databaseBookPath, null, SQLiteDatabase.OPEN_READWRITE);
 
         try {
-            String sql = "select * from books where path = '" + currentBookPath + "'";
+            String sql = "select * from books where id = " + currentBookID;
             Cursor cur = bookLibrary.rawQuery(sql, null);
             cur.moveToFirst();
 

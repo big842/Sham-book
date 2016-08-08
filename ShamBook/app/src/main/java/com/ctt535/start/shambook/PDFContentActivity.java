@@ -140,7 +140,7 @@ public class PDFContentActivity extends AppCompatActivity {
 
         //Get book path store in the previous activity and default background color and percent read
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        String currentBookPath = settings.getString("currentBookPath", "");
+        int currentBookID = settings.getInt("currentBookID", -1);
         defaultBackgroundColor = settings.getString("pdfBackgroundColor", "#ffffff");
         listPdfPages.setBackgroundColor(Color.parseColor(defaultBackgroundColor));
 
@@ -150,10 +150,10 @@ public class PDFContentActivity extends AppCompatActivity {
 
         //Show pdf content(pages) and bookmark
         try {
-            File file = new File(currentBookPath);
+            bookInfo = readBookInformation(currentBookID);
+            File file = new File(bookInfo.getFilePath());
             mFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
             mPdfRenderer = new PdfRenderer(mFileDescriptor);
-            bookInfo = readBookInformation(currentBookPath);
             numPages = mPdfRenderer.getPageCount();
             listPages = new Bitmap[numPages];
             settingListPdfPages();
@@ -290,12 +290,12 @@ public class PDFContentActivity extends AppCompatActivity {
 
             @Override
             public void onPinchEnd() {
-                System.out.println("On Pinch End");
+
             }
 
             @Override
             public void onPinchStarted() {
-                System.out.println("On Pinch Started");
+
             }
         });
 
@@ -326,13 +326,13 @@ public class PDFContentActivity extends AppCompatActivity {
         });
     }
 
-    private BookInformation readBookInformation(String currentBookPath){
+    private BookInformation readBookInformation(int currentBookID){
         BookInformation bookInfo = new BookInformation();
         String databaseBookPath = getApplication().getFilesDir() + "/" + "book_library";
         bookLibrary = SQLiteDatabase.openDatabase(databaseBookPath, null, SQLiteDatabase.OPEN_READWRITE);
 
         try {
-            String sql = "select * from books where path = '" + currentBookPath + "'";
+            String sql = "select * from books where id = " + currentBookID;
             Cursor cur = bookLibrary.rawQuery(sql, null);
             cur.moveToFirst();
 

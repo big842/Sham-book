@@ -419,17 +419,17 @@ public class MainActivity extends AppCompatActivity {
     private void showDialogChooseColor(){
         ArrayList<Integer> listColor = new ArrayList<>();
         listColor.add(Color.parseColor("#fcdada"));
-        listColor.add(Color.parseColor("#fcd0ba"));
+        listColor.add(Color.parseColor("#fca579"));
         listColor.add(Color.parseColor("#e3e3e3"));
         listColor.add(Color.parseColor("#bfbdbc"));
         listColor.add(Color.parseColor("#ffffff"));
-        listColor.add(Color.parseColor("#c3feee"));
+        listColor.add(Color.parseColor("#5dff51"));
         listColor.add(Color.parseColor("#fcdca4"));
-        listColor.add(Color.parseColor("#c2a5ff"));
+        listColor.add(Color.parseColor("#546bfe"));
         listColor.add(Color.parseColor("#fbf78f"));
-        listColor.add(Color.parseColor("#e1b8fe"));
+        listColor.add(Color.parseColor("#b655fa"));
         listColor.add(Color.parseColor("#fca4bd"));
-        listColor.add(Color.parseColor("#c1b7fc"));
+        listColor.add(Color.parseColor("#21e5db"));
 
         // Custom dialog
         final Dialog dialog = new Dialog(context);
@@ -580,6 +580,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showDialogSearchText(){
+        foundBooks = new ArrayList<>();
+
         hSearch = new Handler(){
             @Override
             public void handleMessage(Message msg) {
@@ -592,7 +594,7 @@ public class MainActivity extends AppCompatActivity {
                         viewBookInformationInScreenAsGrid(foundBooks);
                     else
                         viewBookInformationInScreenAsList(foundBooks);
-                    showDialogSuccessReadFile("Found " + foundBooks.size() + " books with name " + searchText);
+                    showDialogSuccessReadFile("Found " + foundBooks.size() + " books with name '" + searchText + "'");
                 }
                 progress.dismiss();
             }
@@ -620,19 +622,25 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 EditText inputText = (EditText)dialog.findViewById(R.id.inputText);
-                searchText = inputText.getText().toString();
+                searchText = inputText.getText().toString().toLowerCase();
+                searchText = searchText.replace("  ", "");
                 dialog.dismiss();
+
                 progress = ProgressDialog.show(context, "Please wait...", "Searching books for text '" + searchText + "' ..." , true);
 
                 Thread t = new Thread() {
                     @Override
                     public void run(){
-                        foundBooks = new ArrayList<>();
-
                         for (int i=0; i<allBooks.size(); i++){
-                            BookInformation  bookItem = allBooks.get(i);
-                            if(bookItem.getFilePath().contains(searchText) || bookItem.getAuthors().contains(searchText)){
-                                foundBooks.add(bookItem);
+                            try {
+                                BookInformation  bookItem = allBooks.get(i);
+                                String bookName = bookItem.getName().toLowerCase();
+                                String bookAuthors = bookItem.getAuthors().toLowerCase();
+                                if(bookName.contains(searchText) || bookAuthors.contains(searchText)){
+                                    foundBooks.add(bookItem);
+                                }
+                            }catch (Exception ex){
+                                ex.printStackTrace();
                             }
                         }
 
@@ -934,14 +942,16 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if(bo != null) {
+                int id = wasBookExitsInLibrary(bo.getFilePath());
+
                 //If this books is not exists in library, we will insert to library
-                if(!wasBookExitsInLibrary(bo.getFilePath())) {
-                    insertABookWillBeRead(bo);
+                if(id == -1) {
+                    id = (int)insertABookWillBeRead(bo);
                 }
 
                 SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
                 SharedPreferences.Editor editor = settings.edit();
-                editor.putString("currentBookPath", bo.getFilePath());
+                editor.putInt("currentBookID", id);
                 editor.commit();
 
                 Intent intent;
@@ -998,11 +1008,11 @@ public class MainActivity extends AppCompatActivity {
                         String extension = filenameArray[filenameArray.length - 1];
                         BookInformation bo = null;
 
-                        if (extension.equals("epub") && !wasBookExitsInLibrary(file.getPath())){
+                        if (extension.equals("epub") && wasBookExitsInLibrary(file.getPath()) == -1){
                             bo = readEpubInformation(file.getPath());
                             if(bo != null)
                                 listBooksCanOpen.add(bo);
-                        }else if(extension.equals("pdf") && !wasBookExitsInLibrary(file.getPath())){
+                        }else if(extension.equals("pdf") && wasBookExitsInLibrary(file.getPath()) == -1){
                             bo = readPDFInformation(file.getPath());
                             if(bo != null)
                                 listBooksCanOpen.add(bo);
@@ -1089,14 +1099,14 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private boolean wasBookExitsInLibrary(String path){
+    private int wasBookExitsInLibrary(String path){
         for (BookInformation book: allBooks){
             String bPath = book.getFilePath();
             if(bPath.equals(path)){
-                return true;
+                return book.getId();
             }
         }
-        return false;
+        return -1;
     }
 
     private ArrayList<BookInformation> readRecentBooksInLibrary(){
@@ -1306,7 +1316,7 @@ public class MainActivity extends AppCompatActivity {
 
                 SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
                 SharedPreferences.Editor editor = settings.edit();
-                editor.putString("currentBookPath", bo.getFilePath());
+                editor.putInt("currentBookID", bo.getId());
                 editor.commit();
 
                 if(!wasExistInRecentRead(bo.getId())) {
@@ -1345,7 +1355,7 @@ public class MainActivity extends AppCompatActivity {
 
                 SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
                 SharedPreferences.Editor editor = settings.edit();
-                editor.putString("currentBookPath", bo.getFilePath());
+                editor.putInt("currentBookID", bo.getId());
                 editor.commit();
 
                 if(!wasExistInRecentRead(bo.getId())) {
@@ -1403,7 +1413,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void insertABookWillBeRead(BookInformation book){
+    private long insertABookWillBeRead(BookInformation book){
         ContentValues cValues = new ContentValues();
         bookLibrary.beginTransaction();
         cValues.put("name", book.getName());
@@ -1414,9 +1424,11 @@ public class MainActivity extends AppCompatActivity {
         cValues.put("percent_read", 0);
         cValues.put("current_page", 0);
         cValues.put("total_page", book.getTotalPage());
-        bookLibrary.insert("books", null, cValues);
+        long rowPos = bookLibrary.insert("books", null, cValues);
         bookLibrary.setTransactionSuccessful();
         bookLibrary.endTransaction();
+
+        return rowPos;
     }
 
     private void insertBooks(ArrayList<BookInformation> books){
