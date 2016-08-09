@@ -299,7 +299,7 @@ public class EpubContentActivity extends AppCompatActivity {
         int chapPos = 0;
         StringBuilder listBookContentHtml = new StringBuilder();
         listBookContentHtml.append("<!DOCTYPE html><html><header><style>img{width: 100%; height: 100%;} " +
-                "body{max-width: 100% !important; margin: auto;}</style></header><body>\n");
+                "html,body{max-width: 99% !important; overflow-y: scroll; overflow-x: hidden;}</style></header><body>\n");
         for (String chapter: listChapterFile){
             String []fName = chapter.split("\\.");
             try {
@@ -938,7 +938,7 @@ public class EpubContentActivity extends AppCompatActivity {
             lastChapter = view;
             view.setBackgroundColor(0xFFD0F79A);
         }
-        
+
         tableOfChapters.closeDrawers();
         webviewContent.loadUrl("javascript:document.getElementById('chapter_click_"+ listChapterFile.get(pos)+ "').click();");
     }

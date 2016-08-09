@@ -1159,7 +1159,6 @@ public class MainActivity extends AppCompatActivity {
                 super.handleMessage(msg);
 
                 hanldeAfterReadAllBooks(allBooks);
-                Toast.makeText(context, "Show all books in library...", Toast.LENGTH_LONG).show();
                 progress.dismiss();
             }
         };
@@ -1280,6 +1279,8 @@ public class MainActivity extends AppCompatActivity {
         }else{
             //app is at list book
             atWhere = 2;
+
+            Toast.makeText(context, "Show all books in library...", Toast.LENGTH_LONG).show();
 
             //Disable open Books Layout and handleChooseFileLayout
             openBooksLayout.setVisibility(View.GONE);
