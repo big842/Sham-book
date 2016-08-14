@@ -418,18 +418,18 @@ public class MainActivity extends AppCompatActivity {
 
     private void showDialogChooseColor(){
         ArrayList<Integer> listColor = new ArrayList<>();
-        listColor.add(Color.parseColor("#fcdada"));
-        listColor.add(Color.parseColor("#fca579"));
+        listColor.add(Color.parseColor("#ffffff"));
         listColor.add(Color.parseColor("#e3e3e3"));
         listColor.add(Color.parseColor("#bfbdbc"));
-        listColor.add(Color.parseColor("#ffffff"));
-        listColor.add(Color.parseColor("#5dff51"));
-        listColor.add(Color.parseColor("#fcdca4"));
-        listColor.add(Color.parseColor("#546bfe"));
+        listColor.add(Color.parseColor("#fcdada"));
         listColor.add(Color.parseColor("#fbf78f"));
-        listColor.add(Color.parseColor("#b655fa"));
+        listColor.add(Color.parseColor("#fcdca4"));
         listColor.add(Color.parseColor("#fca4bd"));
         listColor.add(Color.parseColor("#21e5db"));
+        listColor.add(Color.parseColor("#5dff51"));
+        listColor.add(Color.parseColor("#546bfe"));
+        listColor.add(Color.parseColor("#b655fa"));
+        listColor.add(Color.parseColor("#fca579"));
 
         // Custom dialog
         final Dialog dialog = new Dialog(context);
@@ -907,19 +907,19 @@ public class MainActivity extends AppCompatActivity {
                 .setIcon(R.drawable.ic_information)
                 .setTitle("Confirm")
                 .setMessage(message)
-                .setPositiveButton("No",
+                .setPositiveButton("Yes",
                         new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-
-                            }
-                        })
-                .setNegativeButton("Yes",
-                        new  DialogInterface.OnClickListener(){
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 bookLibrary.close();
                                 System.exit(0);
+                            }
+                        })
+                .setNegativeButton("No",
+                        new  DialogInterface.OnClickListener(){
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
                             }
                         })
                 .show();
@@ -1082,6 +1082,7 @@ public class MainActivity extends AppCompatActivity {
             PdfRenderer mPdfRenderer = new PdfRenderer(mFileDescriptor);
             PdfRenderer.Page mCurrentPage = mPdfRenderer.openPage(0);
             Bitmap bitmap = Bitmap.createBitmap(mCurrentPage.getWidth(), mCurrentPage.getHeight(), Bitmap.Config.ARGB_8888);
+            bitmap.eraseColor(Color.WHITE);
             mCurrentPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
             bookInfo.setCoverImage(bitmap);
             bookInfo.setTotalPage(mPdfRenderer.getPageCount());
@@ -1100,6 +1101,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int wasBookExitsInLibrary(String path){
+        if(allBooks.size() == 0){
+            try {
+                String sql = "select * from books where path = '" + path + "'";
+                Cursor cur = bookLibrary.rawQuery(sql, null);
+                cur.moveToFirst();
+                return cur.getInt(0);
+            }catch (Exception ex){
+                ex.printStackTrace();
+                return -1;
+            }
+        }
+
         for (BookInformation book: allBooks){
             String bPath = book.getFilePath();
             if(bPath.equals(path)){

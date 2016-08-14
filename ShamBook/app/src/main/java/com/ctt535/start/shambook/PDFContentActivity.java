@@ -715,18 +715,18 @@ public class PDFContentActivity extends AppCompatActivity {
 
     private void showDialogChooseBackgroundColor(){
         ArrayList<String> listColor = new ArrayList<>();
-        listColor.add("#c9bcbc");
-        listColor.add("#b4a298");
-        listColor.add("#e3e3e3");
-        listColor.add("#000000");
         listColor.add("#ffffff");
-        listColor.add("#9ecfc2");
-        listColor.add("#718884");
-        listColor.add("#8d8d8f");
-        listColor.add("#bdbc90");
-        listColor.add("#8c8dad");
-        listColor.add("#3c3c3c");
-        listColor.add("#b1bdac");
+        listColor.add("#e3e3e3");
+        listColor.add("#545454");
+        listColor.add("#000000");
+        listColor.add("#acc26f");
+        listColor.add("#58cbb7");
+        listColor.add("#58c37f");
+        listColor.add("#78ce53");
+        listColor.add("#d4cf58");
+        listColor.add("#8b8e3d");
+        listColor.add("#4388d3");
+        listColor.add("#c97a4e");
 
         // Custom dialog
         final Dialog dialog = new Dialog(context);

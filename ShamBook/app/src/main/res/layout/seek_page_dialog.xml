@@ -72,7 +72,7 @@
             android:layout_height="wrap_content"
             style="@style/Base.Widget.AppCompat.ActionButton"
             android:layout_marginRight="15dp"
-            android:textColor="#5f5e5e" />
+            android:textColor="#2cf5ab" />
 
         <Button
             android:id="@+id/cancelDialog"
@@ -81,6 +81,6 @@
             android:layout_height="wrap_content"
             style="@style/Base.Widget.AppCompat.ActionButton"
             android:layout_marginRight="5dp"
-            android:textColor="#5f5e5e" />
+            android:textColor="#2cf5ab" />
     </LinearLayout>
 </LinearLayout>

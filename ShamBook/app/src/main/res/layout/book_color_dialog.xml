@@ -40,17 +40,17 @@
             android:id="@+id/color1"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#c9bcbc" />
+            android:backgroundTint="#ffffff" />
         <ImageButton
             android:id="@+id/color2"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#b4a298" />
+            android:backgroundTint="#e3e3e3" />
         <ImageButton
             android:id="@+id/color3"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#e3e3e3" />
+            android:backgroundTint="#545454" />
         <ImageButton
             android:id="@+id/color4"
             android:layout_width="80dp"
@@ -67,22 +67,22 @@
             android:id="@+id/color5"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#ffffff" />
+            android:backgroundTint="#acc26f" />
         <ImageButton
             android:id="@+id/color6"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#9ecfc2" />
+            android:backgroundTint="#58cbb7" />
         <ImageButton
             android:id="@+id/color7"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#718884" />
+            android:backgroundTint="#58c37f" />
         <ImageButton
             android:id="@+id/color8"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#8d8d8f" />
+            android:backgroundTint="#78ce53" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="wrap_content"
@@ -93,22 +93,22 @@
             android:id="@+id/color9"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#bdbc90" />
+            android:backgroundTint="#d4cf58" />
         <ImageButton
             android:id="@+id/color10"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#8c8dad" />
+            android:backgroundTint="#8b8e3d" />
         <ImageButton
             android:id="@+id/color11"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#3c3c3c" />
+            android:backgroundTint="#4388d3" />
         <ImageButton
             android:id="@+id/color12"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:backgroundTint="#b1bdac" />
+            android:backgroundTint="#c97a4e" />
     </LinearLayout>
 
 
@@ -119,5 +119,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         style="@style/Base.Widget.AppCompat.ActionButton"
-        android:layout_marginRight="5dp" />
+        android:layout_marginRight="5dp"
+        android:textColor="#2cf5ab" />
 </LinearLayout>
