@@ -352,15 +352,15 @@ public class EpubContentActivity extends AppCompatActivity {
         }
         listBookContentHtml.append(bookHtml);
         webviewContent.loadDataWithBaseURL("file://"+ bookSourcePath, listBookContentHtml.toString(), "text/html", "utf-8", null);
-        if(defaultTextColor != ""){
-            webviewContent.loadUrl("javascript:document.body.style.setProperty" +
-                    "(\"color\", \"" + defaultTextColor + "\");");
-        }
-
         webviewContent.setWebViewClient(new WebViewClient(){
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                if(defaultTextColor != ""){
+                    webviewContent.loadUrl("javascript:document.body.style.setProperty" +
+                            "(\"color\", \"" + defaultTextColor + "\");");
+                }
+
                 if(currentBookInfo.getCurrentPage() != 0) {
                     webviewContent.setScrollY(currentBookInfo.getCurrentPage());
                     webviewContent.setVisibility(View.VISIBLE);
