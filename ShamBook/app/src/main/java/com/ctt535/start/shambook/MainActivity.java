@@ -207,8 +207,10 @@ public class MainActivity extends AppCompatActivity {
         }else if(atWhere == 1){
             getDirectory(filePath.get(0));
         }else if(atWhere == 0){
-            if(recentBooks.size() != 0 && allBooks.size() != 0) {
-
+            if(recentBooks.size() == 0 && allBooks.size() == 0) {
+                handleChooseFileLayout.setVisibility(View.GONE);
+                showDialogErrorReadFile("Library is empty");
+            }else{
                 //app is at list book
                 atWhere = 2;
 
@@ -235,8 +237,6 @@ public class MainActivity extends AppCompatActivity {
                     else
                         viewBookInformationInScreenAsList(allBooks);
                 }
-            }else{
-                showDialogErrorReadFile("Library is empty");
             }
         }else{
             showDialogConfirm("Are you sure that you want to exit Sham Book?");
@@ -782,7 +782,10 @@ public class MainActivity extends AppCompatActivity {
             btnExitChooseFile.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(recentBooks.size() != 0 && allBooks.size() != 0) {
+                    if(recentBooks.size() == 0 && allBooks.size() == 0) {
+                        handleChooseFileLayout.setVisibility(View.GONE);
+                        showOpenFileLayout(true);
+                    }else{
                         //app is at list book
                         atWhere = 2;
 
@@ -811,8 +814,6 @@ public class MainActivity extends AppCompatActivity {
                                 viewBookInformationInScreenAsList(allBooks);
                             }
                         }
-                    }else{
-                        showOpenFileLayout(true);
                     }
                 }
             });

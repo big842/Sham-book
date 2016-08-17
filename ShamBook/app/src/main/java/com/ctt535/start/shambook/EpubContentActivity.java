@@ -297,9 +297,13 @@ public class EpubContentActivity extends AppCompatActivity {
         List<SpineReference> spineList = spine.getSpineReferences();
         int count = spineList.size();
         int chapPos = 0;
+
+        //Add html to fit text to horizontal screenview
         StringBuilder listBookContentHtml = new StringBuilder();
         listBookContentHtml.append("<!DOCTYPE html><html><header><style>img{width: 100%; height: 100%;} " +
                 "html,body{max-width: 99% !important; overflow-y: scroll; overflow-x: hidden;}</style></header><body>\n");
+
+        //Add a tag to hightlight chapter position of webview
         for (String chapter: listChapterFile){
             String []fName = chapter.split("\\.");
             try {
@@ -940,6 +944,8 @@ public class EpubContentActivity extends AppCompatActivity {
         }
 
         tableOfChapters.closeDrawers();
+
+        //Jump to chapter choosed based on the highlight code
         webviewContent.loadUrl("javascript:document.getElementById('chapter_click_"+ listChapterFile.get(pos)+ "').click();");
     }
 
